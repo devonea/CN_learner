@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CN Learner</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#c1443a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CN Learner">
+<style>
+  :root{
+    --paper:#f5f3ee; --ink:#1c1c1c; --muted:#8a8578; --line:#e5e0d5;
+    --accent:#c1443a; --accent-soft:#f1dcd8;
+    --tone1-bg:#e63946; --tone1-fg:#111;
+    --tone2-bg:#f4a300; --tone2-fg:#111;
+    --tone3-bg:#2a9d5c; --tone3-fg:#111;
+    --tone4-bg:#4aa8d8; --tone4-fg:#111;
+    --tone0-bg:#3a3a3a; --tone0-fg:#fff;
+    --box1:#c7c7c0; --box2:#8fbf8a; --box3:#2f8f4e;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0; padding:0; background:var(--paper); color:var(--ink);
+    font-family:'Noto Sans KR','Noto Sans SC',sans-serif; -webkit-font-smoothing:antialiased;}
+  #app{max-width:480px; margin:0 auto; min-height:100vh; background:#fff;
+    box-shadow:0 0 0 1px var(--line); display:flex; flex-direction:column;}
+
+  header{padding:10px 14px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:6px;}
+  header .back{font-size:18px; cursor:pointer; color:var(--muted); user-select:none; width:22px;}
+  header h1{margin:0; font-size:15.5px; font-weight:700; flex:1; line-height:1.3;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:keep-all;}
+  header .sub{font-size:11px; color:var(--muted);}
+
+  footer{padding:10px 18px; text-align:center; font-size:10px; color:var(--muted); border-top:1px solid var(--line);}
+
+  main{flex:1; padding:0 0 24px; overflow-y:auto;}
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .home-meta{padding:6px 18px 0; font-size:11px; color:var(--muted);}
+
+  .file-notice{margin:10px 14px 0; padding:10px 12px; border-radius:10px; background:#fdf3e3; border:1px solid #f0dcb0;
+    font-size:11.5px; color:#8a6a1f; line-height:1.5; display:flex; justify-content:space-between; align-items:center; gap:8px;}
+  .file-notice .fn-text{flex:1;}
+  .file-notice .fn-link{flex-shrink:0; font-weight:700; text-decoration:underline; cursor:pointer; white-space:nowrap;}
+
+  /* ---- Home ---- */
+  .stats{display:flex; gap:8px; padding:10px 18px 4px;}
+  .stat{flex:1; background:var(--paper); border:1px solid var(--line); border-radius:9px; padding:7px 10px; text-align:center;}
+  .stat .num{font-size:15px; font-weight:700; line-height:1.2;}
+  .stat .label{font-size:9.5px; color:var(--muted); margin-top:1px;}
+  .stat.due .num{color:var(--accent);}
+
+  .actions{display:flex; gap:8px; padding:14px 18px 6px;}
+  .btn{padding:11px 0; border-radius:10px; text-align:center; font-size:13px; font-weight:600;
+    cursor:pointer; border:1px solid var(--line); background:#fff; color:var(--ink);}
+  .btn.primary{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .btn.accent{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .btn.block{width:100%;}
+  .btn.flex{flex:1;}
+  .btn.sm{padding:7px 8px; font-size:11.5px; border-radius:8px;}
+  .btn.icon{padding:7px 8px; font-size:13px; line-height:1;}
+  .btn.danger{color:var(--accent); border-color:var(--accent-soft); background:var(--accent-soft);}
+  .btn:disabled{opacity:.4; cursor:default;}
+
+  .section-title{padding:18px 18px 6px; font-size:13px; font-weight:700; color:var(--muted); letter-spacing:.02em;}
+  .empty{padding:40px 24px; text-align:center; color:var(--muted); font-size:13px; line-height:1.7;}
+
+  .group-list{padding:4px 14px 8px; display:flex; flex-direction:column; gap:10px;}
+  .group{border:1px solid var(--line); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:8px; cursor:pointer;}
+  .group-top{display:flex; justify-content:space-between; align-items:flex-start; gap:8px;}
+  .group-name-wrap{display:flex; align-items:center; gap:6px; min-width:0;}
+  .group-name{font-size:15px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .group-desc{font-size:11.5px; color:var(--muted); line-height:1.4; margin-top:-2px;
+    overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
+  .icon-btn{cursor:pointer; color:var(--muted); font-size:13px; padding:3px 5px; border-radius:6px; flex-shrink:0; user-select:none;}
+  .icon-btn:active{background:var(--paper);}
+  .icon-btn.disabled{opacity:.25; pointer-events:none;}
+  .group-count{font-size:11px; color:var(--muted); white-space:nowrap; flex-shrink:0;}
+  .progress-bar{height:8px; border-radius:5px; background:#eee; overflow:hidden; display:flex;}
+  .progress-bar span{height:100%;}
+  .group-bottom{display:flex; justify-content:space-between; align-items:center;}
+  .group-order-btns{display:flex; gap:2px;}
+  .box-legend{display:flex; gap:8px; font-size:10px; color:var(--muted);}
+  .box-legend i{width:8px; height:8px; border-radius:2px; display:inline-block; margin-right:3px; vertical-align:-1px;}
+  .study-btn{font-size:12px; font-weight:600; padding:6px 12px; border-radius:8px; background:var(--accent-soft); color:var(--accent);}
+  .study-btn.disabled{background:#eee; color:var(--muted);}
+
+  /* ---- Group Detail ---- */
+  .mode-row{display:flex; gap:8px; padding:14px 18px 6px;}
+  .group-desc-block{padding:0 18px 10px; font-size:12.5px; color:var(--muted); line-height:1.5;}
+  .card-row{display:flex; align-items:center; justify-content:space-between; padding:12px 18px;
+    border-bottom:1px solid var(--line); gap:10px;}
+  .card-row .hz{font-size:16px; font-weight:700;}
+  .card-row .py{font-size:11px; color:var(--muted);}
+  .card-row .mn{font-size:12px; color:var(--muted); max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right;}
+  .card-row .edit-ic{cursor:pointer; color:var(--muted); font-size:14px; padding:4px;}
+  .card-row .card-checkbox{width:18px; height:18px; flex-shrink:0; accent-color:var(--accent);}
+  .card-row .hz-wrap{display:flex; align-items:center; gap:10px;}
+  .box-dot{width:7px; height:7px; border-radius:50%; display:inline-block; margin-right:6px;}
+
+  .selection-bar{position:sticky; bottom:0; background:#fff; border-top:1px solid var(--line);
+    display:none; align-items:center; gap:8px; padding:10px 18px; box-shadow:0 -2px 10px rgba(0,0,0,.05); z-index:10;}
+  .selection-bar.active{display:flex;}
+  .selection-bar .sel-count{font-size:12px; color:var(--muted); flex:1;}
+
+  /* ---- Study ---- */
+  .study-wrap{display:flex; flex-direction:column; align-items:center; padding:20px 18px;}
+  .study-progress{font-size:12px; color:var(--muted); margin-bottom:14px;}
+  .flip-card{width:100%; max-width:320px; height:300px; border-radius:16px; background:#fff;
+    border:1px solid var(--line); box-shadow:0 4px 20px rgba(0,0,0,.08);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;
+    padding:20px; text-align:center; gap:10px;}
+  .flip-card .front-hz{font-size:56px; font-weight:700;}
+  .flip-card .hint{font-size:11px; color:var(--muted); margin-top:6px;}
+  .flip-card .hanzi-big{display:flex; gap:6px; justify-content:center;}
+  .syll{display:inline-flex; align-items:center; justify-content:center; font-size:40px; font-weight:700;
+    padding:2px 8px; border-radius:8px; line-height:1.1;}
+  .pinyin-row{display:flex; gap:8px; justify-content:center;}
+  .syll-py{display:inline-flex; align-items:center; justify-content:center; padding:2px 8px; border-radius:6px; font-size:14px;}
+  .trad-row{display:flex; gap:6px; justify-content:center;}
+  .syll-tr{display:inline-flex; align-items:center; justify-content:center; padding:1px 7px; border-radius:6px; font-size:20px;}
+  .study-meaning{font-size:14px; color:var(--ink); margin-top:4px; line-height:1.5;}
+
+  .grade-row{display:flex; gap:8px; width:100%; max-width:320px; margin-top:18px;}
+  .grade-btn{flex:1; padding:13px 4px; border-radius:10px; text-align:center; font-size:13px; font-weight:700; cursor:pointer; color:#fff;}
+  .grade-unknown{background:#b5473f;}
+  .grade-unsure{background:#d6a324;}
+  .grade-confident{background:#2f8f4e;}
+
+  .session-done{padding:60px 24px; text-align:center;}
+  .session-done .big{font-size:40px; margin-bottom:10px;}
+
+  /* ---- Modal ---- */
+  .overlay{position:fixed; inset:0; background:rgba(0,0,0,.4); display:none; align-items:flex-end; justify-content:center; z-index:50;}
+  .overlay.active{display:flex;}
+  .modal{background:#fff; width:100%; max-width:480px; border-radius:18px 18px 0 0; max-height:88vh; overflow-y:auto; padding:18px;}
+  .modal h2{margin:0 0 14px; font-size:16px;}
+  .field{margin-bottom:12px;}
+  .field label{display:block; font-size:12px; color:var(--muted); margin-bottom:4px; font-weight:600;}
+  .field input, .field select, .field textarea{
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font-size:14px;
+    font-family:inherit; background:var(--paper); color:var(--ink);
+  }
+  .field textarea{min-height:70px; resize:vertical;}
+  .field textarea.mono{min-height:120px; font-family: 'SFMono-Regular', Menlo, monospace; font-size:12.5px;}
+  .modal-actions{display:flex; gap:8px; margin-top:16px;}
+  .preview-list{border:1px solid var(--line); border-radius:8px; max-height:200px; overflow-y:auto; margin-top:10px;}
+  .preview-item{padding:8px 10px; border-bottom:1px solid var(--line); font-size:12px; display:flex; justify-content:space-between; gap:8px;}
+  .preview-item:last-child{border-bottom:none;}
+  .preview-item.err{background:#fdecea; color:var(--accent);}
+  .preview-summary{font-size:12px; color:var(--muted); margin-top:8px;}
+
+  /* ---- Help modal ---- */
+  .help-tabs{display:flex; gap:6px; margin-bottom:14px;}
+  .help-tab{flex:1; text-align:center; padding:9px 4px; border-radius:8px; font-size:12.5px; font-weight:600;
+    color:var(--muted); background:var(--paper); cursor:pointer; border:1px solid var(--line);}
+  .help-tab.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .help-panel{display:none;}
+  .help-panel.active{display:block;}
+  .help-panel h3{font-size:13.5px; margin:16px 0 6px;}
+  .help-panel h3:first-child{margin-top:0;}
+  .help-panel p{font-size:12.5px; color:var(--ink); line-height:1.6; margin:6px 0;}
+  .help-panel .help-intro{font-size:12px; color:var(--muted); background:var(--paper); padding:10px 12px; border-radius:8px;}
+  .help-panel ul, .help-panel ol{margin:6px 0; padding-left:20px;}
+  .help-panel li{font-size:12.5px; line-height:1.6; margin-bottom:4px;}
+  .help-panel code{background:var(--paper); padding:1px 5px; border-radius:4px; font-size:11.5px;}
+  .help-panel pre{background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:12px;
+    font-size:11px; line-height:1.6; white-space:pre-wrap; word-break:break-word; max-height:280px; overflow-y:auto; margin:8px 0;}
+
+  /* ---- History (session-based) ---- */
+  .hist-date-header{padding:14px 18px 6px; font-size:12px; font-weight:700; color:var(--muted); background:var(--paper); position:sticky; top:0;}
+  .hist-row{display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid var(--line); gap:12px;}
+  .hist-left{display:flex; flex-direction:column; gap:4px; min-width:0; flex:1;}
+  .hist-word{font-size:14px; font-weight:700;}
+  .hist-meta{font-size:11px; color:var(--muted);}
+  .hist-ratio-bar{display:flex; height:6px; border-radius:4px; overflow:hidden; background:#eee; margin-top:2px; width:150px; max-width:100%;}
+  .hist-ratio-bar span{height:100%;}
+  .hist-right{display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0;}
+  .hist-time{font-size:11px; color:var(--muted);}
+  .hist-pct{font-size:16px; font-weight:700; color:var(--ink);}
+  .hist-live{font-size:10px; font-weight:700; color:var(--accent);}
+
+  .toast{position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--ink); color:#fff;
+    padding:10px 18px; border-radius:20px; font-size:12.5px; z-index:100; opacity:0; transition:opacity .2s; pointer-events:none;}
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <div class="back" id="backBtn" style="visibility:hidden;">‹</div>
+    <div style="flex:1; min-width:0;">
+      <h1 id="headerTitle">중국어학습어플</h1>
+      <div class="sub" id="headerSub"></div>
+    </div>
+    <div class="btn sm" id="profileBtn" style="display:none;">MY</div>
+    <div class="btn sm" id="helpBtn" style="display:none;">사용법</div>
+    <div class="btn sm" id="historyBtn" style="display:none;">기록</div>
+  </header>
+
+  <main>
+    <!-- ===== HOME VIEW ===== -->
+    <div class="view active" id="view-home">
+      <div class="home-meta" id="homeMeta"></div>
+      <div class="file-notice" id="fileNotice" style="display:none;">
+        <div class="fn-text">⚠️ 지금은 파일을 직접 열어서 "홈 화면에 추가"가 제한됩니다.</div>
+        <div class="fn-link" id="fileNoticeLink">방법 보기</div>
+      </div>
+      <div class="stats">
+        <div class="stat due"><div class="num" id="statDue">0</div><div class="label">오늘 복습</div></div>
+        <div class="stat"><div class="num" id="statTotal">0</div><div class="label">전체 카드</div></div>
+        <div class="stat"><div class="num" id="statMastery">0%</div><div class="label">평균 숙련도</div></div>
+      </div>
+      <div class="actions">
+        <div class="btn primary flex" id="openPasteBtn">+ 카드 붙여넣기</div>
+        <div class="btn flex" id="openImportBtn">가져오기</div>
+        <div class="btn flex" id="exportBtn">내보내기</div>
+      </div>
+      <div class="section-title">그룹</div>
+      <div class="group-list" id="groupList"></div>
+    </div>
+
+    <!-- ===== GROUP DETAIL VIEW ===== -->
+    <div class="view" id="view-group">
+      <div class="group-desc-block" id="groupDescBlock" style="display:none;"></div>
+      <div class="mode-row">
+        <div class="btn accent flex" id="startLeitnerBtn">라이트너 학습</div>
+        <div class="btn flex" id="startRandomBtn">랜덤 학습</div>
+      </div>
+      <div class="mode-row" style="padding-top:0;">
+        <div class="btn sm flex" id="addCardToGroupBtn">+ 카드 추가</div>
+        <div class="btn sm flex" id="selectModeBtn">카드 선택</div>
+        <div class="btn sm flex" id="editGroupBtn">그룹 편집</div>
+        <div class="btn sm flex danger" id="deleteGroupBtn">그룹 삭제</div>
+      </div>
+      <div class="section-title">카드 목록 (<span id="groupCardCount">0</span>)</div>
+      <div id="cardRows"></div>
+      <div class="selection-bar" id="selectionBar">
+        <div class="sel-count" id="selectionCount">0개 선택</div>
+        <div class="btn sm" id="selMoveBtn">이동</div>
+        <div class="btn sm danger" id="selDeleteBtn">삭제</div>
+        <div class="btn sm" id="selCancelBtn">취소</div>
+      </div>
+    </div>
+
+    <!-- ===== STUDY VIEW ===== -->
+    <div class="view" id="view-study">
+      <div class="study-wrap" id="studyWrap"></div>
+    </div>
+
+    <!-- ===== HISTORY VIEW (세션 기준) ===== -->
+    <div class="view" id="view-history">
+      <div class="stats">
+        <div class="stat"><div class="num" id="histTodayCards">0</div><div class="label">오늘 학습 카드</div></div>
+        <div class="stat"><div class="num" id="histWeekSessions">0</div><div class="label">최근 7일 세션</div></div>
+        <div class="stat"><div class="num" id="histTotalSessions">0</div><div class="label">전체 누적 세션</div></div>
+      </div>
+      <div id="historyList"></div>
+    </div>
+  </main>
+
+  <footer id="appFooter"></footer>
+</div>
+
+<!-- Paste modal -->
+<div class="overlay" id="pasteOverlay">
+  <div class="modal">
+    <h2>카드 붙여넣기</h2>
+    <div class="field">
+      <label>대상 그룹</label>
+      <select id="pasteGroupSelect"></select>
+    </div>
+    <div class="field" id="newGroupNameField" style="display:none;">
+      <label>새 그룹 이름</label>
+      <input type="text" id="newGroupNameInput" placeholder="예: HSK 4급 필수어휘">
+    </div>
+    <div class="field" id="newGroupDescField" style="display:none;">
+      <label>그룹 설명 (선택)</label>
+      <textarea id="newGroupDescInput" placeholder="이 그룹에 대한 간단한 설명"></textarea>
+    </div>
+    <div class="field">
+      <label>텍스트 붙여넣기 (한 줄에 카드 하나: 간체[TAB]병음, 번체, 해석)</label>
+      <textarea class="mono" id="pasteTextarea" placeholder="东京&#9;dōng jīng, 東京, 동경 (북송의 수도, 현 카이펑)"></textarea>
+    </div>
+    <div class="btn sm" id="previewBtn">미리보기</div>
+    <div class="preview-list" id="previewList" style="display:none;"></div>
+    <div class="preview-summary" id="previewSummary"></div>
+    <div class="modal-actions">
+      <div class="btn flex" id="pasteCancelBtn">취소</div>
+      <div class="btn primary flex" id="pasteConfirmBtn" disabled>추가하기</div>
+    </div>
+  </div>
+</div>
+
+<!-- Card edit modal -->
+<div class="overlay" id="editOverlay">
+  <div class="modal">
+    <h2>카드 편집</h2>
+    <div class="field"><label>간체</label><input type="text" id="editSimplified"></div>
+    <div class="field"><label>병음 (공백으로 음절 구분, 성조부호 포함)</label><input type="text" id="editPinyin"></div>
+    <div class="field"><label>번체</label><input type="text" id="editTraditional"></div>
+    <div class="field"><label>해석</label><input type="text" id="editMeaning"></div>
+    <div class="field"><label>그룹</label><select id="editGroupSelect"></select></div>
+    <div class="modal-actions">
+      <div class="btn danger flex" id="editDeleteBtn">삭제</div>
+      <div class="btn flex" id="editCancelBtn">취소</div>
+      <div class="btn primary flex" id="editSaveBtn">저장</div>
+    </div>
+  </div>
+</div>
+
+<!-- Group edit modal (이름/설명) -->
+<div class="overlay" id="groupEditOverlay">
+  <div class="modal">
+    <h2>그룹 편집</h2>
+    <div class="field"><label>그룹 이름</label><input type="text" id="groupEditName"></div>
+    <div class="field"><label>그룹 설명 (선택)</label><textarea id="groupEditDesc" placeholder="이 그룹에 대한 간단한 설명"></textarea></div>
+    <div class="modal-actions">
+      <div class="btn flex" id="groupEditCancelBtn">취소</div>
+      <div class="btn primary flex" id="groupEditSaveBtn">저장</div>
+    </div>
+  </div>
+</div>
+
+<!-- Move cards modal -->
+<div class="overlay" id="moveOverlay">
+  <div class="modal">
+    <h2>카드 이동</h2>
+    <div class="field">
+      <label>이동할 그룹</label>
+      <select id="moveGroupSelect"></select>
+    </div>
+    <div class="field" id="moveNewGroupField" style="display:none;">
+      <label>새 그룹 이름</label>
+      <input type="text" id="moveNewGroupInput" placeholder="예: 복습 필요 단어">
+    </div>
+    <div class="preview-summary" id="moveSummary"></div>
+    <div class="modal-actions">
+      <div class="btn flex" id="moveCancelBtn">취소</div>
+      <div class="btn primary flex" id="moveConfirmBtn">이동하기</div>
+    </div>
+  </div>
+</div>
+
+<!-- Import modal -->
+<div class="overlay" id="importOverlay">
+  <div class="modal">
+    <h2>가져오기</h2>
+    <div class="field">
+      <label>내보내기로 생성한 JSON 파일 선택</label>
+      <input type="file" id="importFileInput" accept="application/json">
+    </div>
+    <div class="preview-summary" id="importSummary"></div>
+    <div class="modal-actions">
+      <div class="btn flex" id="importCancelBtn">취소</div>
+      <div class="btn primary flex" id="importConfirmBtn" disabled>가져오기</div>
+    </div>
+  </div>
+</div>
+
+<!-- Profile modal (이름 설정 / 첫 실행 환영) -->
+<div class="overlay" id="profileOverlay">
+  <div class="modal">
+    <h2 id="profileModalTitle">이름 설정</h2>
+    <div style="font-size:12.5px; color:var(--muted); margin:-6px 0 14px; line-height:1.5;" id="profileModalDesc"></div>
+    <div class="field">
+      <label>이름 (선택사항)</label>
+      <input type="text" id="profileNameInput" placeholder="예: 제인">
+    </div>
+    <div class="modal-actions">
+      <div class="btn flex" id="profileCancelBtn">취소</div>
+      <div class="btn primary flex" id="profileSaveBtn">저장</div>
+    </div>
+  </div>
+</div>
+
+<!-- Help modal -->
+<div class="overlay" id="helpOverlay">
+  <div class="modal">
+    <h2>도움말</h2>
+    <div class="help-tabs">
+      <div class="help-tab active" id="helpTab1">1. 어플 사용법</div>
+      <div class="help-tab" id="helpTab2">2. 단어장 입력법</div>
+    </div>
+
+    <div class="help-panel active" id="helpPanel1">
+      <h3>그룹과 카드</h3>
+      <ul>
+        <li>홈 화면 <strong>"+ 카드 붙여넣기"</strong>로 그룹을 만들고 카드를 한 번에 여러 장 추가할 수 있습니다.</li>
+        <li>입력 형식: <code>간체[Tab]병음, 번체, 뜻</code> — 한 줄에 카드 한 장.</li>
+        <li>그룹 카드의 ✎ 아이콘으로 그룹 이름·설명을 수정하고, ↑↓ 아이콘으로 순서를 바꿀 수 있습니다.</li>
+        <li>그룹 상세 화면에서 "카드 선택"으로 여러 카드를 한 번에 삭제하거나 다른 그룹으로 이동할 수 있습니다.</li>
+      </ul>
+      <h3>학습 모드</h3>
+      <ul>
+        <li><strong>라이트너 모드</strong>: 오늘 복습할 카드를 우선 노출합니다 (1일→3일→7일 주기). 오늘 분량을 다 마쳐도 전체 카드로 추가 학습이 가능합니다.</li>
+        <li><strong>랜덤 모드</strong>: 그룹 내 모든 카드를 무작위 순서로 학습합니다.</li>
+        <li>카드를 탭하면 뒤집혀서 병음·번체·뜻이 나타나며, <strong>모름 / 알듯말듯 / 자신있음</strong> 3단계로 채점합니다.</li>
+      </ul>
+      <h3 id="installGuideSection">홈 화면에 설치하기 (오프라인 지원 포함)</h3>
+      <p>파일을 더블클릭해서 직접 여신 경우(주소창에 <code>file://</code>로 시작), 크롬 보안 정책상 "홈 화면에 추가" 및 오프라인 캐싱이 제한됩니다. 아래처럼 무료로 호스팅하면 앱처럼 설치되고, 이후엔 인터넷 없이도 열립니다.</p>
+      <p style="font-size:11.5px; color:var(--muted);">함께 받은 5개 파일(<code>index.html</code>, <code>manifest.json</code>, <code>sw.js</code>, <code>icon-192.png</code>, <code>icon-512.png</code>)을 <strong>모두 같은 폴더(저장소 루트)</strong>에 올려야 합니다. index.html 하나만 올리면 오프라인 캐싱이 동작하지 않습니다.</p>
+      <p><strong>방법 A. GitHub Pages</strong></p>
+      <ol>
+        <li>github.com에서 새 저장소(Public)를 만듭니다.</li>
+        <li>받은 5개 파일을 저장소 루트에 그대로 업로드합니다 (폴더 없이, 파일명 변경 없이).</li>
+        <li>저장소 Settings → Pages → Source를 "main" 브랜치로 설정 후 저장합니다.</li>
+        <li>몇 분 뒤 <code>https://내아이디.github.io/저장소명/</code> 주소가 생성됩니다.</li>
+        <li>이 주소를 크롬 모바일로 열고 메뉴에서 "설치" 또는 "홈 화면에 추가"를 누릅니다.</li>
+      </ol>
+      <p><strong>방법 B. Netlify Drop (계정 없이 가능)</strong></p>
+      <ol>
+        <li><code>app.netlify.com/drop</code> 접속</li>
+        <li>5개 파일이 담긴 폴더 전체를 화면에 끌어다 놓습니다.</li>
+        <li>생성된 https 주소를 크롬 모바일로 열고 "홈 화면에 추가"를 누릅니다.</li>
+        <li>계속 사용하려면 무료 계정으로 사이트를 "Claim"해두는 것을 권장합니다.</li>
+      </ol>
+      <p style="font-size:11.5px; color:var(--muted);">한 번 접속해서 캐싱된 뒤에는 인터넷이 없어도 앱이 열립니다 (단, 내용을 최신화하려면 온라인 상태에서 한 번씩 열어주세요). 데이터는 각 기기의 브라우저(로컬 저장소)에 저장되므로, 기기를 옮기실 땐 "내보내기/가져오기"를 이용해주세요.</p>
+
+      <h3>기록과 백업</h3>
+      <ul>
+        <li>"기록" 화면에서 학습 세션별(그룹, 카드 수, 시각, 응답 비율) 기록을 확인할 수 있습니다. 5분 이상 활동이 없으면 세션이 종료됩니다.</li>
+        <li>"내보내기"로 전체 데이터를 JSON 파일로 저장하고, 다른 기기에서 "가져오기"로 불러올 수 있습니다.</li>
+      </ul>
+    </div>
+
+    <div class="help-panel" id="helpPanel2">
+      <p class="help-intro">다른 사용자가 Gemini에서 동일한 형태로 학습 노트를 생성할 수 있도록 정리한 안내 가이드 및 프롬프트입니다.</p>
+
+      <h3>📌 이미지·텍스트 기반 중국어 학습 노트 생성 프롬프트</h3>
+      <p>이 프롬프트는 중국 현지 표지판, 광고, 텍스트를 입력했을 때 <strong>분석, 단어장(Anki/퀴즐렛 연동용), 문법 설명</strong>이 포함된 스터디 노트를 자동으로 생성하도록 설계되었습니다.</p>
+
+      <h3>1. Gemini 입력용 프롬프트 (복사하여 사용)</h3>
+      <p style="font-size:12px; color:var(--muted);">아래 전체 블록을 복사하여 Gemini 대화창에 붙여넣으세요.</p>
+      <pre id="geminiPromptBlock"></pre>
+      <div class="btn sm" id="copyPromptBtn">📋 프롬프트 복사</div>
+
+      <h3>2. 사용 방법 안내</h3>
+      <ol>
+        <li><strong>프롬프트 입력</strong>: 위 프롬프트를 복사하여 Gemini 첫 대화창에 입력합니다.</li>
+        <li><strong>중국어 입력</strong>
+          <ul>
+            <li><strong>텍스트</strong>: 공부하고 싶은 중국어 문장을 직접 입력합니다.</li>
+            <li><strong>사진</strong>: 현지에서 찍은 표지판, 메뉴판, 지하철 안내문, 광고판 사진을 그대로 첨부합니다.</li>
+          </ul>
+        </li>
+        <li><strong>단어장 앱 활용</strong>: "단어장" 항목의 내용을 드래그하여 복사한 뒤, 이 CN Learner의 "카드 붙여넣기"(또는 Anki, Quizlet, Excel 등)에 붙여넣으면 탭(Tab) 구분을 인식해 자동으로 단어 카드가 생성됩니다.</li>
+      </ol>
+    </div>
+
+    <div class="modal-actions">
+      <div class="btn primary flex" id="helpCloseBtn">닫기</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ======================= 상수 ======================= */
+const APP_VERSION = '1.8.0';
+const STORAGE_KEY = 'flashcard_app_v1';
+const PROFILE_KEY = 'cn_learner_profile';
+const SESSION_TIMEOUT_MS = 5 * 60 * 1000; // 5분 무활동 시 세션 종료
+
+const TONE_MAP = {
+  'ā':1,'ē':1,'ī':1,'ō':1,'ū':1,'ǖ':1,
+  'á':2,'é':2,'í':2,'ó':2,'ú':2,'ǘ':2,
+  'ǎ':3,'ě':3,'ǐ':3,'ǒ':3,'ǔ':3,'ǚ':3,
+  'à':4,'è':4,'ì':4,'ò':4,'ù':4,'ǜ':4,
+};
+const TONE_COLORS = {
+  1:{bg:'var(--tone1-bg)', fg:'var(--tone1-fg)'},
+  2:{bg:'var(--tone2-bg)', fg:'var(--tone2-fg)'},
+  3:{bg:'var(--tone3-bg)', fg:'var(--tone3-fg)'},
+  4:{bg:'var(--tone4-bg)', fg:'var(--tone4-fg)'},
+  0:{bg:'var(--tone0-bg)', fg:'var(--tone0-fg)'},
+};
+const LEITNER_INTERVALS = {1:1, 2:3, 3:7}; // days
+const GRADE_LABEL = {unknown:'모름', unsure:'알듯말듯', confident:'자신있음'};
+const GRADE_COLOR = {unknown:'#b5473f', unsure:'#d6a324', confident:'#2f8f4e'};
+
+const GEMINI_PROMPT = `[중국어 공부용 스터디 노트 생성 시스템]
+
+당신은 중국어 학습자를 돕는 전문 튜터입니다. 앞으로 제가 입력하는 중국어 텍스트나 촬영 사진에 대해 다음 조건과 규칙을 엄격히 준수하여 스터디 노트를 작성해 주세요.
+
+[기본 작성 규칙 및 출력 형식]
+1. 텍스트 분석
+   - 간체자
+   - 번체자
+   - 발음 (병음)
+   - 한국어 번역
+
+2. 단어장 (단어장 앱 복사/붙여넣기용)
+   - 형식을 반드시 지켜주세요: 간체자[Tab]병음, 번체자, 한국어 뜻
+   - [Tab] 위치에는 실제 탭 문자(\\t)를 입력하여 엑셀이나 Anki, Quizlet 등 단어장 어플에 바로 구분되어 입력될 수 있도록 합니다.
+
+3. 핵심 문법 및 표현 설명
+   - 주요 문법 구조, 전치사 활용, 관용구, 성어 등을 상세히 설명합니다.
+
+[사진 입력 시 추가 규칙]
+- 사용자가 중국 현지에서 찍은 사진(광고, 안내문, 표지판 등)을 올릴 경우, 배경이나 부수적으로 촬영된 불필요한 글자는 제외하고 학습에 적합한 핵심 안내/문구 텍스트 위주로만 엄선하여 작업을 수행하세요.
+- 답변 스타일은 인사말, 서두, 맺음말 등 불필요한 문장을 전면 배제하고 핵심 위주의 개조식으로 간결하게 작성하세요.`;
+
+/* ======================= 상태 ======================= */
+let state = loadState();
+let profile = loadProfile(); // {username, _firstLaunch}
+let nav = { view:'home', groupId:null };
+let studySession = null; // {groupId, mode, queue:[cardId...], idx, flipped}
+let pendingParsed = []; // 붙여넣기 미리보기 결과 캐시
+let pendingImport = null;
+let selectionMode = false;
+let selectedCardIds = new Set();
+let editingGroupId = null;
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return {groups:[], cards:[], sessions:[], currentSession:null};
+    const parsed = JSON.parse(raw);
+    return {
+      groups: parsed.groups || [],
+      cards: parsed.cards || [],
+      sessions: parsed.sessions || [],
+      currentSession: parsed.currentSession || null,
+    };
+  }catch(e){
+    console.error('state load failed', e);
+    return {groups:[], cards:[], sessions:[], currentSession:null};
+  }
+}
+function saveState(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+function loadProfile(){
+  try{
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if(raw === null) return {username:'', _firstLaunch:true};
+    const p = JSON.parse(raw);
+    return {username: p.username || '', _firstLaunch:false};
+  }catch(e){
+    return {username:'', _firstLaunch:true};
+  }
+}
+function saveProfile(){
+  localStorage.setItem(PROFILE_KEY, JSON.stringify({username: profile.username}));
+}
+function uuid(){
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c=>{
+    const r = Math.random()*16|0, v = c==='x'?r:(r&0x3|0x8);
+    return v.toString(16);
+  });
+}
+function nowISO(){ return new Date().toISOString(); }
+function addDays(iso, days){
+  const d = iso ? new Date(iso) : new Date();
+  d.setDate(d.getDate()+days);
+  return d.toISOString();
+}
+function isDue(card){
+  if(!card.nextReview) return true;
+  return new Date(card.nextReview) <= new Date();
+}
+
+/* ======================= 파서 ======================= */
+function detectTone(syllable){
+  for(const ch of syllable){ if(TONE_MAP[ch]) return TONE_MAP[ch]; }
+  return 0;
+}
+function parseLine(line){
+  const tabIdx = line.indexOf('\t');
+  if(tabIdx === -1) return {error:'탭(TAB) 구분자를 찾을 수 없습니다'};
+  const simplified = line.slice(0, tabIdx).trim();
+  const rest = line.slice(tabIdx+1).trim();
+  if(!simplified) return {error:'간체 필드가 비어있습니다'};
+  const parts = rest.split(',');
+  if(parts.length < 3) return {error:'형식 오류 (병음, 번체, 해석 필요)'};
+  const pinyinRaw = parts[0].trim();
+  const traditional = parts[1].trim();
+  const meaning = parts.slice(2).join(',').trim();
+  if(!pinyinRaw || !traditional || !meaning) return {error:'필드 중 비어있는 값이 있습니다'};
+  const pinyinSyllables = pinyinRaw.split(/\s+/).filter(Boolean);
+  const tones = pinyinSyllables.map(detectTone);
+  return { simplified, traditional, pinyinSyllables, tones, meaning };
+}
+function parseBulk(text){
+  const lines = text.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
+  return lines.map(line=>{
+    const result = parseLine(line);
+    return {raw:line, ...result};
+  });
+}
+
+/* ======================= 렌더링 헬퍼 ======================= */
+function el(sel){ return document.querySelector(sel); }
+function els(sel){ return document.querySelectorAll(sel); }
+function showToast(msg, duration){
+  const t = el('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), duration || 1800);
+}
+function showWelcomeToast(){
+  const msg = profile.username
+    ? `환영합니다, ${profile.username}님! 오늘도 화이팅이에요 🙌`
+    : '환영합니다! 오늘도 즐거운 학습 되세요 🙌';
+  showToast(msg, 2600);
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+function groupStats(groupId){
+  const cards = state.cards.filter(c=>c.groupId===groupId);
+  const total = cards.length;
+  const box1 = cards.filter(c=>c.box===1).length;
+  const box2 = cards.filter(c=>c.box===2).length;
+  const box3 = cards.filter(c=>c.box===3).length;
+  const due = cards.filter(isDue).length;
+  return {total, box1, box2, box3, due};
+}
+
+function renderHanziColored(chars, tones, sizeClass){
+  let html = '<div class="'+sizeClass+'">';
+  for(let i=0;i<chars.length;i++){
+    const tone = tones[i] !== undefined ? tones[i] : 0;
+    const c = TONE_COLORS[tone] || TONE_COLORS[0];
+    html += `<span class="syll" style="background:${c.bg}; color:${c.fg};">${chars[i]}</span>`;
+  }
+  html += '</div>';
+  return html;
+}
+function renderPinyinColored(syllables, tones){
+  let html = '<div class="pinyin-row">';
+  syllables.forEach((s,i)=>{
+    const tone = tones[i] !== undefined ? tones[i] : 0;
+    const c = TONE_COLORS[tone] || TONE_COLORS[0];
+    html += `<span class="syll-py" style="background:${c.bg}; color:${c.fg};">${s}</span>`;
+  });
+  html += '</div>';
+  return html;
+}
+function renderTraditionalColored(chars, tones){
+  let html = '<div class="trad-row">';
+  for(let i=0;i<chars.length;i++){
+    const tone = tones[i] !== undefined ? tones[i] : 0;
+    const c = TONE_COLORS[tone] || TONE_COLORS[0];
+    html += `<span class="syll-tr" style="background:${c.bg}; color:${c.fg};">${chars[i]}</span>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+/* ======================= 네비게이션 ======================= */
+function goHome(){
+  nav = {view:'home', groupId:null};
+  exitSelectionMode(false);
+  render();
+}
+function goGroup(groupId){
+  nav = {view:'group', groupId};
+  exitSelectionMode(false);
+  render();
+}
+function goStudy(groupId, mode){
+  const cards = state.cards.filter(c=>c.groupId===groupId);
+  if(cards.length === 0){
+    showToast('그룹에 카드가 없습니다');
+    return;
+  }
+  let queue;
+  let usedFallback = false;
+  if(mode === 'leitner'){
+    let pool = cards.filter(isDue);
+    if(pool.length === 0){
+      pool = cards.slice();
+      usedFallback = true;
+    }
+    queue = pool.sort((a,b)=>{
+      const boxA = a.box || 1, boxB = b.box || 1;
+      if(boxA !== boxB) return boxA - boxB;
+      const av = a.nextReview ? new Date(a.nextReview).getTime() : 0;
+      const bv = b.nextReview ? new Date(b.nextReview).getTime() : 0;
+      return av - bv;
+    }).map(c=>c.id);
+  } else {
+    queue = shuffle(cards.map(c=>c.id));
+  }
+  studySession = {groupId, mode, queue, idx:0, flipped:false};
+  nav = {view:'study', groupId};
+  if(usedFallback) showToast('오늘 예정된 복습은 끝났지만, 전체 카드로 추가 학습을 시작합니다');
+  render();
+}
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+function goHistory(){
+  checkSessionTimeout();
+  nav = {view:'history', groupId:null};
+  render();
+}
+
+/* ======================= 메인 렌더 ======================= */
+function render(){
+  els('.view').forEach(v=>v.classList.remove('active'));
+  el('#backBtn').style.visibility = nav.view==='home' ? 'hidden' : 'visible';
+  el('#historyBtn').style.display = nav.view==='home' ? 'inline-block' : 'none';
+  el('#profileBtn').style.display = nav.view==='home' ? 'inline-block' : 'none';
+  el('#helpBtn').style.display = nav.view==='home' ? 'inline-block' : 'none';
+
+  if(nav.view === 'home'){
+    el('#view-home').classList.add('active');
+    el('#headerTitle').textContent = profile.username ? `${profile.username}님의 중국어학습어플` : '중국어학습어플';
+    el('#headerSub').textContent = '';
+    renderHome();
+  } else if(nav.view === 'group'){
+    el('#view-group').classList.add('active');
+    const g = state.groups.find(g=>g.id===nav.groupId);
+    el('#headerTitle').textContent = g ? g.name : '그룹';
+    renderGroup();
+  } else if(nav.view === 'study'){
+    el('#view-study').classList.add('active');
+    const g = state.groups.find(g=>g.id===studySession.groupId);
+    el('#headerTitle').textContent = g ? g.name : '학습';
+    el('#headerSub').textContent = studySession.mode==='leitner' ? '라이트너 모드' : '랜덤 모드';
+    renderStudy();
+  } else if(nav.view === 'history'){
+    el('#view-history').classList.add('active');
+    el('#headerTitle').textContent = '학습 기록';
+    el('#headerSub').textContent = '';
+    renderHistory();
+  }
+}
+
+function renderHome(){
+  const total = state.cards.length;
+  const due = state.cards.filter(isDue).length;
+  const mastery = total ? Math.round(state.cards.filter(c=>c.box===3).length / total * 100) : 0;
+  el('#statDue').textContent = due;
+  el('#statTotal').textContent = total;
+  el('#statMastery').textContent = mastery + '%';
+  el('#homeMeta').textContent = `${state.groups.length}개 그룹 · 총 ${total}장`;
+  el('#fileNotice').style.display = (location.protocol === 'file:') ? 'flex' : 'none';
+  el('#appFooter').textContent = `CN Learner v${APP_VERSION}`;
+
+  const list = el('#groupList');
+  if(state.groups.length === 0){
+    list.innerHTML = `<div class="empty">아직 그룹이 없습니다.<br>"카드 붙여넣기"로 첫 그룹을 만들어보세요.</div>`;
+    return;
+  }
+  list.innerHTML = state.groups.map((g,idx)=>{
+    const s = groupStats(g.id);
+    const pct = n => s.total ? (n/s.total*100) : 0;
+    const isFirst = idx === 0, isLast = idx === state.groups.length-1;
+    return `
+      <div class="group" data-gid="${g.id}">
+        <div class="group-top">
+          <div style="min-width:0; flex:1;">
+            <div class="group-name-wrap">
+              <div class="group-name">${escapeHtml(g.name)}</div>
+              <div class="icon-btn rename-ic" data-gid="${g.id}" title="그룹 편집">✎</div>
+            </div>
+            ${g.description ? `<div class="group-desc">${escapeHtml(g.description)}</div>` : ''}
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+            <div class="group-count">${s.total}장 · 오늘 ${s.due}개</div>
+            <div class="group-order-btns">
+              <div class="icon-btn move-up ${isFirst?'disabled':''}" data-gid="${g.id}" title="위로">↑</div>
+              <div class="icon-btn move-down ${isLast?'disabled':''}" data-gid="${g.id}" title="아래로">↓</div>
+            </div>
+          </div>
+        </div>
+        <div class="progress-bar">
+          <span style="width:${pct(s.box1)}%; background:var(--box1);"></span>
+          <span style="width:${pct(s.box2)}%; background:var(--box2);"></span>
+          <span style="width:${pct(s.box3)}%; background:var(--box3);"></span>
+        </div>
+        <div class="group-bottom">
+          <div class="box-legend">
+            <span><i style="background:var(--box1);"></i>Box1</span>
+            <span><i style="background:var(--box2);"></i>Box2</span>
+            <span><i style="background:var(--box3);"></i>Box3</span>
+          </div>
+          <div class="study-btn ${s.due===0?'disabled':''}">${s.due===0 ? (s.total>0 ? '오늘 완료 · 추가 학습' : '카드 없음') : '학습하기'}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  els('.group').forEach(elm=>{
+    elm.addEventListener('click', ()=>goGroup(elm.dataset.gid));
+  });
+  els('.rename-ic').forEach(icon=>{
+    icon.addEventListener('click', (e)=>{ e.stopPropagation(); openGroupEditModal(icon.dataset.gid); });
+  });
+  els('.move-up').forEach(icon=>{
+    icon.addEventListener('click', (e)=>{ e.stopPropagation(); if(!icon.classList.contains('disabled')) moveGroupOrder(icon.dataset.gid, -1); });
+  });
+  els('.move-down').forEach(icon=>{
+    icon.addEventListener('click', (e)=>{ e.stopPropagation(); if(!icon.classList.contains('disabled')) moveGroupOrder(icon.dataset.gid, 1); });
+  });
+}
+
+function moveGroupOrder(groupId, dir){
+  const idx = state.groups.findIndex(g=>g.id===groupId);
+  const swapIdx = idx + dir;
+  if(idx === -1 || swapIdx < 0 || swapIdx >= state.groups.length) return;
+  const tmp = state.groups[idx];
+  state.groups[idx] = state.groups[swapIdx];
+  state.groups[swapIdx] = tmp;
+  saveState();
+  render();
+}
+
+function renderGroup(){
+  const g = state.groups.find(g=>g.id===nav.groupId);
+  if(!g){ goHome(); return; }
+  const cards = state.cards.filter(c=>c.groupId===g.id);
+  el('#groupCardCount').textContent = cards.length;
+  el('#headerSub').textContent = `${cards.length}장 · 오늘 ${cards.filter(isDue).length}개 복습`;
+
+  const descBlock = el('#groupDescBlock');
+  if(g.description){
+    descBlock.style.display = 'block';
+    descBlock.textContent = g.description;
+  } else {
+    descBlock.style.display = 'none';
+  }
+
+  el('#selectModeBtn').textContent = selectionMode ? '선택 해제' : '카드 선택';
+
+  const rows = el('#cardRows');
+  if(cards.length === 0){
+    rows.innerHTML = `<div class="empty">카드가 없습니다. "+ 카드 추가"로 만들어보세요.</div>`;
+    updateSelectionBar();
+    return;
+  }
+  const boxColor = {1:'var(--box1)',2:'var(--box2)',3:'var(--box3)'};
+  rows.innerHTML = cards.map(c=>`
+    <div class="card-row" data-cid="${c.id}">
+      <div class="hz-wrap">
+        ${selectionMode ? `<input type="checkbox" class="card-checkbox" data-cid="${c.id}" ${selectedCardIds.has(c.id)?'checked':''}>` : ''}
+        <div>
+          <div class="hz"><span class="box-dot" style="background:${boxColor[c.box]||boxColor[1]};"></span>${escapeHtml(c.simplified)}</div>
+          <div class="py">${c.pinyinSyllables.join(' ')}</div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div class="mn">${escapeHtml(c.meaning)}</div>
+        ${!selectionMode ? `<div class="edit-ic" data-cid="${c.id}">✎</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+
+  if(!selectionMode){
+    els('.edit-ic').forEach(icon=>{
+      icon.addEventListener('click', (e)=>{ e.stopPropagation(); openEditModal(icon.dataset.cid); });
+    });
+  } else {
+    els('.card-checkbox').forEach(cb=>{
+      cb.addEventListener('change', ()=>{
+        if(cb.checked) selectedCardIds.add(cb.dataset.cid);
+        else selectedCardIds.delete(cb.dataset.cid);
+        updateSelectionBar();
+      });
+    });
+    els('.card-row').forEach(row=>{
+      row.addEventListener('click', (e)=>{
+        if(e.target.classList.contains('card-checkbox')) return;
+        const cb = row.querySelector('.card-checkbox');
+        cb.checked = !cb.checked;
+        cb.dispatchEvent(new Event('change'));
+      });
+    });
+  }
+  updateSelectionBar();
+}
+
+function updateSelectionBar(){
+  const bar = el('#selectionBar');
+  if(selectionMode && selectedCardIds.size > 0){
+    bar.classList.add('active');
+    el('#selectionCount').textContent = `${selectedCardIds.size}개 선택`;
+  } else {
+    bar.classList.remove('active');
+  }
+}
+function exitSelectionMode(rerender){
+  selectionMode = false;
+  selectedCardIds = new Set();
+  if(rerender) render();
+}
+
+function renderStudy(){
+  const wrap = el('#studyWrap');
+  if(studySession.idx >= studySession.queue.length){
+    wrap.innerHTML = `
+      <div class="session-done">
+        <div class="big">🎉</div>
+        <div style="font-weight:700; font-size:16px; margin-bottom:6px;">학습 완료!</div>
+        <div style="color:var(--muted); font-size:13px; margin-bottom:20px;">${studySession.queue.length}장을 복습했습니다.</div>
+        <div class="btn primary" id="studyDoneBtn" style="display:inline-block; padding:10px 24px;">그룹으로 돌아가기</div>
+      </div>`;
+    el('#studyDoneBtn').addEventListener('click', ()=>goGroup(studySession.groupId));
+    return;
+  }
+  const cardId = studySession.queue[studySession.idx];
+  const card = state.cards.find(c=>c.id===cardId);
+  const progressText = `${studySession.idx+1} / ${studySession.queue.length}`;
+
+  if(!studySession.flipped){
+    wrap.innerHTML = `
+      <div class="study-progress">${progressText}</div>
+      <div class="flip-card" id="flipCard">
+        <div class="front-hz">${escapeHtml(card.simplified)}</div>
+        <div class="hint">탭하여 뒤집기</div>
+      </div>`;
+    el('#flipCard').addEventListener('click', ()=>{ studySession.flipped = true; render(); });
+  } else {
+    wrap.innerHTML = `
+      <div class="study-progress">${progressText}</div>
+      <div class="flip-card" id="flipCard">
+        ${renderHanziColored(card.simplified, card.tones, 'hanzi-big')}
+        ${renderPinyinColored(card.pinyinSyllables, card.tones)}
+        ${renderTraditionalColored(card.traditional, card.tones)}
+        <div class="study-meaning">${escapeHtml(card.meaning)}</div>
+      </div>
+      <div class="grade-row">
+        <div class="grade-btn grade-unknown" data-grade="unknown">모름</div>
+        <div class="grade-btn grade-unsure" data-grade="unsure">알듯말듯</div>
+        <div class="grade-btn grade-confident" data-grade="confident">자신있음</div>
+      </div>`;
+    els('.grade-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>gradeCard(card.id, btn.dataset.grade));
+    });
+  }
+}
+
+/* ======================= 세션 기반 학습 기록 ======================= */
+function checkSessionTimeout(){
+  if(!state.currentSession) return false;
+  const gap = Date.now() - new Date(state.currentSession.lastActivityAt).getTime();
+  if(gap > SESSION_TIMEOUT_MS){
+    finalizeCurrentSession();
+    return true;
+  }
+  return false;
+}
+function finalizeCurrentSession(){
+  if(state.currentSession && state.currentSession.cardCount > 0){
+    state.sessions.push({
+      id: state.currentSession.id,
+      groupId: state.currentSession.groupId,
+      groupName: state.currentSession.groupName,
+      mode: state.currentSession.mode,
+      startedAt: state.currentSession.startedAt,
+      endedAt: state.currentSession.lastActivityAt,
+      cardCount: state.currentSession.cardCount,
+      counts: state.currentSession.counts,
+    });
+  }
+  state.currentSession = null;
+  saveState();
+}
+
+function gradeCard(cardId, grade){
+  const card = state.cards.find(c=>c.id===cardId);
+  if(!card) return;
+  let box = card.box || 1;
+  if(grade === 'unknown') box = 1;
+  else if(grade === 'unsure') box = box; // 유지
+  else if(grade === 'confident') box = Math.min(box+1, 3);
+  card.box = box;
+  card.lastReviewed = nowISO();
+  card.nextReview = addDays(nowISO(), LEITNER_INTERVALS[box]);
+
+  // 세션 처리: 그룹이 다르거나 5분 이상 공백이면 이전 세션 종료 후 새 세션 시작
+  if(state.currentSession){
+    const gap = Date.now() - new Date(state.currentSession.lastActivityAt).getTime();
+    if(state.currentSession.groupId !== card.groupId || gap > SESSION_TIMEOUT_MS){
+      finalizeCurrentSession();
+    }
+  }
+  if(!state.currentSession){
+    const group = state.groups.find(g=>g.id===card.groupId);
+    state.currentSession = {
+      id: uuid(),
+      groupId: card.groupId,
+      groupName: group ? group.name : '(삭제된 그룹)',
+      mode: studySession.mode,
+      startedAt: nowISO(),
+      lastActivityAt: nowISO(),
+      cardCount: 0,
+      counts: {unknown:0, unsure:0, confident:0},
+    };
+  }
+  state.currentSession.counts[grade] = (state.currentSession.counts[grade]||0) + 1;
+  state.currentSession.cardCount += 1;
+  state.currentSession.lastActivityAt = nowISO();
+
+  saveState();
+
+  studySession.idx += 1;
+  studySession.flipped = false;
+  render();
+}
+
+function sessionRatioPct(session){
+  const total = session.cardCount || 0;
+  if(total === 0) return 0;
+  return Math.round((session.counts.confident||0) / total * 100);
+}
+function renderSessionRow(session, isLive){
+  const d = new Date(session.startedAt);
+  const timeStr = d.toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'});
+  const endD = session.endedAt ? new Date(session.endedAt) : null;
+  const endStr = endD ? endD.toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'}) : '';
+  const total = session.cardCount || 1;
+  const c = session.counts;
+  const pctUnknown = (c.unknown||0)/total*100;
+  const pctUnsure = (c.unsure||0)/total*100;
+  const pctConfident = (c.confident||0)/total*100;
+  const modeLabel = session.mode === 'leitner' ? '라이트너' : '랜덤';
+  return `
+    <div class="hist-row">
+      <div class="hist-left">
+        <div class="hist-word">${escapeHtml(session.groupName)} ${isLive ? '<span class="hist-live">진행중</span>' : ''}</div>
+        <div class="hist-meta">${session.cardCount}장 · ${modeLabel} · ${timeStr}${endStr ? '–'+endStr : ''}</div>
+        <div class="hist-ratio-bar">
+          <span style="width:${pctUnknown}%; background:${GRADE_COLOR.unknown};"></span>
+          <span style="width:${pctUnsure}%; background:${GRADE_COLOR.unsure};"></span>
+          <span style="width:${pctConfident}%; background:${GRADE_COLOR.confident};"></span>
+        </div>
+      </div>
+      <div class="hist-right">
+        <div class="hist-pct">${sessionRatioPct(session)}%</div>
+        <div class="hist-time">자신있음 비율</div>
+      </div>
+    </div>`;
+}
+
+function renderHistory(){
+  checkSessionTimeout();
+  const allSessions = state.sessions.slice();
+  if(state.currentSession && state.currentSession.cardCount > 0){
+    allSessions.push({...state.currentSession, endedAt: null, _live:true});
+  }
+  allSessions.sort((a,b)=> new Date(b.startedAt) - new Date(a.startedAt));
+
+  const now = new Date();
+  const todayStr = now.toDateString();
+  const weekAgo = new Date(now.getTime() - 7*24*60*60*1000);
+
+  const todayCards = allSessions.filter(s=> new Date(s.startedAt).toDateString() === todayStr)
+    .reduce((sum,s)=> sum + s.cardCount, 0);
+  const weekSessions = allSessions.filter(s=> new Date(s.startedAt) >= weekAgo).length;
+
+  el('#histTodayCards').textContent = todayCards;
+  el('#histWeekSessions').textContent = weekSessions;
+  el('#histTotalSessions').textContent = allSessions.length;
+
+  const list = el('#historyList');
+  if(allSessions.length === 0){
+    list.innerHTML = `<div class="empty">아직 학습 기록이 없습니다.<br>학습을 시작하면 세션 단위로 기록됩니다.</div>`;
+    return;
+  }
+
+  let html = '';
+  let lastDateKey = null;
+  allSessions.forEach(s=>{
+    const d = new Date(s.startedAt);
+    const dateKey = d.toDateString();
+    if(dateKey !== lastDateKey){
+      const label = dateKey === todayStr ? '오늘' : d.toLocaleDateString('ko-KR', {month:'long', day:'numeric', weekday:'short'});
+      html += `<div class="hist-date-header">${label}</div>`;
+      lastDateKey = dateKey;
+    }
+    html += renderSessionRow(s, !!s._live);
+  });
+  list.innerHTML = html;
+}
+
+/* ======================= 그룹/카드 CRUD ======================= */
+function createGroup(name, description){
+  const g = {id:uuid(), name:name.trim(), description:(description||'').trim(), createdAt:nowISO()};
+  state.groups.push(g);
+  saveState();
+  return g;
+}
+function deleteGroup(groupId){
+  state.groups = state.groups.filter(g=>g.id!==groupId);
+  state.cards = state.cards.filter(c=>c.groupId!==groupId);
+  saveState();
+}
+function addCard(draft, groupId){
+  const card = {
+    id: uuid(),
+    simplified: draft.simplified,
+    traditional: draft.traditional,
+    pinyinSyllables: draft.pinyinSyllables,
+    tones: draft.tones,
+    meaning: draft.meaning,
+    groupId,
+    createdAt: nowISO(),
+    box: 1,
+    lastReviewed: null,
+    nextReview: null,
+  };
+  state.cards.push(card);
+  return card;
+}
+function cardDuplicateKey(c){
+  return c.simplified + '|' + c.pinyinSyllables.join('');
+}
+
+/* ======================= 그룹 편집 모달 (이름/설명) ======================= */
+function openGroupEditModal(groupId){
+  const g = state.groups.find(g=>g.id===groupId);
+  if(!g) return;
+  editingGroupId = groupId;
+  el('#groupEditName').value = g.name;
+  el('#groupEditDesc').value = g.description || '';
+  el('#groupEditOverlay').classList.add('active');
+}
+el('#groupEditCancelBtn').addEventListener('click', ()=>el('#groupEditOverlay').classList.remove('active'));
+el('#groupEditSaveBtn').addEventListener('click', ()=>{
+  const g = state.groups.find(g=>g.id===editingGroupId);
+  if(!g) return;
+  const name = el('#groupEditName').value.trim();
+  if(!name){ showToast('그룹 이름을 입력해주세요'); return; }
+  g.name = name;
+  g.description = el('#groupEditDesc').value.trim();
+  saveState();
+  el('#groupEditOverlay').classList.remove('active');
+  showToast('그룹이 저장되었습니다');
+  render();
+});
+
+/* ======================= 붙여넣기 모달 ======================= */
+function populateGroupSelect(selectEl, includeNewOption, excludeGroupId){
+  selectEl.innerHTML = '';
+  if(includeNewOption){
+    const opt = document.createElement('option');
+    opt.value = '__new__';
+    opt.textContent = '+ 새 그룹 만들기';
+    selectEl.appendChild(opt);
+  }
+  state.groups.forEach(g=>{
+    if(excludeGroupId && g.id === excludeGroupId) return;
+    const opt = document.createElement('option');
+    opt.value = g.id;
+    opt.textContent = g.name;
+    selectEl.appendChild(opt);
+  });
+}
+
+function openPasteModal(presetGroupId){
+  populateGroupSelect(el('#pasteGroupSelect'), true);
+  if(presetGroupId){
+    el('#pasteGroupSelect').value = presetGroupId;
+  } else if(state.groups.length === 0){
+    el('#pasteGroupSelect').value = '__new__';
+  }
+  toggleNewGroupField();
+  el('#newGroupNameInput').value = '';
+  el('#newGroupDescInput').value = '';
+  el('#pasteTextarea').value = '';
+  el('#previewList').style.display = 'none';
+  el('#previewList').innerHTML = '';
+  el('#previewSummary').textContent = '';
+  el('#pasteConfirmBtn').disabled = true;
+  pendingParsed = [];
+  el('#pasteOverlay').classList.add('active');
+}
+function toggleNewGroupField(){
+  const isNew = el('#pasteGroupSelect').value === '__new__';
+  el('#newGroupNameField').style.display = isNew ? 'block' : 'none';
+  el('#newGroupDescField').style.display = isNew ? 'block' : 'none';
+}
+el('#pasteGroupSelect').addEventListener('change', toggleNewGroupField);
+
+el('#openPasteBtn').addEventListener('click', ()=>openPasteModal(null));
+el('#addCardToGroupBtn').addEventListener('click', ()=>openPasteModal(nav.groupId));
+el('#pasteCancelBtn').addEventListener('click', ()=>el('#pasteOverlay').classList.remove('active'));
+
+el('#previewBtn').addEventListener('click', ()=>{
+  const text = el('#pasteTextarea').value;
+  pendingParsed = parseBulk(text);
+  const list = el('#previewList');
+  if(pendingParsed.length === 0){
+    list.style.display = 'none';
+    el('#previewSummary').textContent = '입력된 줄이 없습니다.';
+    el('#pasteConfirmBtn').disabled = true;
+    return;
+  }
+  list.style.display = 'block';
+  list.innerHTML = pendingParsed.map(p=>{
+    if(p.error){
+      return `<div class="preview-item err"><span>${escapeHtml(p.raw)}</span><span>${p.error}</span></div>`;
+    }
+    return `<div class="preview-item"><span>${escapeHtml(p.simplified)} (${p.pinyinSyllables.join(' ')})</span><span>${escapeHtml(p.meaning)}</span></div>`;
+  }).join('');
+  const okCount = pendingParsed.filter(p=>!p.error).length;
+  const errCount = pendingParsed.length - okCount;
+  el('#previewSummary').textContent = `총 ${pendingParsed.length}줄 · 성공 ${okCount} · 오류 ${errCount}`;
+  el('#pasteConfirmBtn').disabled = okCount === 0;
+});
+
+el('#pasteConfirmBtn').addEventListener('click', ()=>{
+  let groupId = el('#pasteGroupSelect').value;
+  if(groupId === '__new__'){
+    const name = el('#newGroupNameInput').value.trim();
+    if(!name){ showToast('새 그룹 이름을 입력해주세요'); return; }
+    const g = createGroup(name, el('#newGroupDescInput').value);
+    groupId = g.id;
+  }
+  const existingKeys = new Set(state.cards.filter(c=>c.groupId===groupId).map(cardDuplicateKey));
+  let added = 0, skipped = 0;
+  pendingParsed.filter(p=>!p.error).forEach(draft=>{
+    const key = draft.simplified + '|' + draft.pinyinSyllables.join('');
+    if(existingKeys.has(key)){ skipped++; return; }
+    addCard(draft, groupId);
+    existingKeys.add(key);
+    added++;
+  });
+  saveState();
+  el('#pasteOverlay').classList.remove('active');
+  showToast(`${added}장 추가됨${skipped? ' · '+skipped+'장 중복 건너뜀':''}`);
+  nav = {view:'group', groupId};
+  render();
+});
+
+/* ======================= 카드 편집 모달 ======================= */
+let editingCardId = null;
+function openEditModal(cardId){
+  const card = state.cards.find(c=>c.id===cardId);
+  if(!card) return;
+  editingCardId = cardId;
+  el('#editSimplified').value = card.simplified;
+  el('#editPinyin').value = card.pinyinSyllables.join(' ');
+  el('#editTraditional').value = card.traditional;
+  el('#editMeaning').value = card.meaning;
+  populateGroupSelect(el('#editGroupSelect'), false);
+  el('#editGroupSelect').value = card.groupId;
+  el('#editOverlay').classList.add('active');
+}
+el('#editCancelBtn').addEventListener('click', ()=>el('#editOverlay').classList.remove('active'));
+el('#editSaveBtn').addEventListener('click', ()=>{
+  const card = state.cards.find(c=>c.id===editingCardId);
+  if(!card) return;
+  const simplified = el('#editSimplified').value.trim();
+  const pinyinRaw = el('#editPinyin').value.trim();
+  const traditional = el('#editTraditional').value.trim();
+  const meaning = el('#editMeaning').value.trim();
+  if(!simplified || !pinyinRaw || !traditional || !meaning){
+    showToast('모든 필드를 입력해주세요'); return;
+  }
+  const pinyinSyllables = pinyinRaw.split(/\s+/).filter(Boolean);
+  card.simplified = simplified;
+  card.pinyinSyllables = pinyinSyllables;
+  card.tones = pinyinSyllables.map(detectTone);
+  card.traditional = traditional;
+  card.meaning = meaning;
+  card.groupId = el('#editGroupSelect').value;
+  saveState();
+  el('#editOverlay').classList.remove('active');
+  showToast('저장되었습니다');
+  render();
+});
+el('#editDeleteBtn').addEventListener('click', ()=>{
+  if(!confirm('이 카드를 삭제할까요?')) return;
+  state.cards = state.cards.filter(c=>c.id!==editingCardId);
+  saveState();
+  el('#editOverlay').classList.remove('active');
+  showToast('카드가 삭제되었습니다');
+  render();
+});
+
+/* ======================= 카드 선택 모드 (삭제/이동) ======================= */
+el('#selectModeBtn').addEventListener('click', ()=>{
+  selectionMode = !selectionMode;
+  selectedCardIds = new Set();
+  render();
+});
+el('#selCancelBtn').addEventListener('click', ()=>{
+  exitSelectionMode(true);
+});
+el('#selDeleteBtn').addEventListener('click', ()=>{
+  if(selectedCardIds.size === 0) return;
+  if(!confirm(`선택한 ${selectedCardIds.size}장의 카드를 삭제할까요?`)) return;
+  state.cards = state.cards.filter(c=>!selectedCardIds.has(c.id));
+  saveState();
+  exitSelectionMode(true);
+  showToast('선택한 카드가 삭제되었습니다');
+});
+
+let moveTargetCardIds = [];
+el('#selMoveBtn').addEventListener('click', ()=>{
+  if(selectedCardIds.size === 0) return;
+  moveTargetCardIds = Array.from(selectedCardIds);
+  populateGroupSelect(el('#moveGroupSelect'), true, nav.groupId);
+  toggleMoveNewGroupField();
+  el('#moveNewGroupInput').value = '';
+  el('#moveSummary').textContent = `${moveTargetCardIds.length}장을 이동합니다.`;
+  el('#moveOverlay').classList.add('active');
+});
+function toggleMoveNewGroupField(){
+  const isNew = el('#moveGroupSelect').value === '__new__';
+  el('#moveNewGroupField').style.display = isNew ? 'block' : 'none';
+}
+el('#moveGroupSelect').addEventListener('change', toggleMoveNewGroupField);
+el('#moveCancelBtn').addEventListener('click', ()=>el('#moveOverlay').classList.remove('active'));
+el('#moveConfirmBtn').addEventListener('click', ()=>{
+  let targetGroupId = el('#moveGroupSelect').value;
+  if(targetGroupId === '__new__'){
+    const name = el('#moveNewGroupInput').value.trim();
+    if(!name){ showToast('새 그룹 이름을 입력해주세요'); return; }
+    const g = createGroup(name, '');
+    targetGroupId = g.id;
+  }
+  const existingKeys = new Set(state.cards.filter(c=>c.groupId===targetGroupId && !moveTargetCardIds.includes(c.id)).map(cardDuplicateKey));
+  let moved = 0, skipped = 0;
+  moveTargetCardIds.forEach(cid=>{
+    const card = state.cards.find(c=>c.id===cid);
+    if(!card) return;
+    const key = cardDuplicateKey(card);
+    if(existingKeys.has(key)){ skipped++; return; }
+    card.groupId = targetGroupId;
+    existingKeys.add(key);
+    moved++;
+  });
+  saveState();
+  el('#moveOverlay').classList.remove('active');
+  exitSelectionMode(false);
+  showToast(`${moved}장 이동됨${skipped? ' · '+skipped+'장 중복으로 건너뜀':''}`);
+  nav = {view:'group', groupId: nav.groupId};
+  render();
+});
+
+/* ======================= 그룹 삭제 / 학습 시작 ======================= */
+el('#editGroupBtn').addEventListener('click', ()=>openGroupEditModal(nav.groupId));
+el('#deleteGroupBtn').addEventListener('click', ()=>{
+  const g = state.groups.find(g=>g.id===nav.groupId);
+  if(!g) return;
+  if(!confirm(`"${g.name}" 그룹과 소속 카드를 모두 삭제할까요?`)) return;
+  deleteGroup(g.id);
+  showToast('그룹이 삭제되었습니다');
+  goHome();
+});
+el('#startLeitnerBtn').addEventListener('click', ()=>goStudy(nav.groupId, 'leitner'));
+el('#startRandomBtn').addEventListener('click', ()=>goStudy(nav.groupId, 'random'));
+el('#backBtn').addEventListener('click', ()=>{
+  if(nav.view === 'study'){ goGroup(studySession.groupId); }
+  else if(nav.view === 'group'){ goHome(); }
+  else if(nav.view === 'history'){ goHome(); }
+});
+el('#historyBtn').addEventListener('click', goHistory);
+
+/* ======================= 내보내기 / 가져오기 ======================= */
+el('#exportBtn').addEventListener('click', ()=>{
+  checkSessionTimeout();
+  const data = {
+    version: 2,
+    appVersion: APP_VERSION,
+    exportedAt: nowISO(),
+    groups: state.groups,
+    cards: state.cards,
+    sessions: state.sessions,
+    currentSession: state.currentSession,
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `CN_Learner_data_v${APP_VERSION}_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('내보내기 완료');
+});
+
+el('#openImportBtn').addEventListener('click', ()=>{
+  el('#importFileInput').value = '';
+  el('#importSummary').textContent = '';
+  el('#importConfirmBtn').disabled = true;
+  pendingImport = null;
+  el('#importOverlay').classList.add('active');
+});
+el('#importCancelBtn').addEventListener('click', ()=>el('#importOverlay').classList.remove('active'));
+el('#importFileInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const data = JSON.parse(reader.result);
+      if(!data.groups || !data.cards) throw new Error('형식이 올바르지 않습니다');
+      pendingImport = data;
+      el('#importSummary').textContent = `그룹 ${data.groups.length}개, 카드 ${data.cards.length}장을 가져올 수 있습니다.`;
+      el('#importConfirmBtn').disabled = false;
+    }catch(err){
+      pendingImport = null;
+      el('#importSummary').textContent = '파일을 읽을 수 없습니다: ' + err.message;
+      el('#importConfirmBtn').disabled = true;
+    }
+  };
+  reader.readAsText(file);
+});
+el('#importConfirmBtn').addEventListener('click', ()=>{
+  if(!pendingImport) return;
+  const groupIdMap = {}; // 원본 groupId -> 로컬 groupId
+  pendingImport.groups.forEach(ig=>{
+    let local = state.groups.find(g=>g.name === ig.name);
+    if(!local){
+      local = {id:uuid(), name:ig.name, description: ig.description || '', createdAt: ig.createdAt || nowISO()};
+      state.groups.push(local);
+    } else if(!local.description && ig.description){
+      local.description = ig.description;
+    }
+    groupIdMap[ig.id] = local.id;
+  });
+  let added = 0, skipped = 0;
+  pendingImport.cards.forEach(ic=>{
+    const localGroupId = groupIdMap[ic.groupId];
+    if(!localGroupId) return;
+    const key = ic.simplified + '|' + (ic.pinyinSyllables||[]).join('');
+    const dup = state.cards.some(c=>c.groupId===localGroupId && cardDuplicateKey(c)===key);
+    if(dup){ skipped++; return; }
+    state.cards.push({
+      id: uuid(),
+      simplified: ic.simplified,
+      traditional: ic.traditional,
+      pinyinSyllables: ic.pinyinSyllables,
+      tones: ic.tones,
+      meaning: ic.meaning,
+      groupId: localGroupId,
+      createdAt: ic.createdAt || nowISO(),
+      box: ic.box || 1,
+      lastReviewed: ic.lastReviewed || null,
+      nextReview: ic.nextReview || null,
+    });
+    added++;
+  });
+  if(Array.isArray(pendingImport.sessions)){
+    const existingIds = new Set(state.sessions.map(s=>s.id));
+    pendingImport.sessions.forEach(is=>{
+      if(existingIds.has(is.id)) return;
+      const localGroupId = groupIdMap[is.groupId];
+      state.sessions.push({
+        id: is.id || uuid(),
+        groupId: localGroupId || is.groupId,
+        groupName: is.groupName,
+        mode: is.mode,
+        startedAt: is.startedAt,
+        endedAt: is.endedAt,
+        cardCount: is.cardCount,
+        counts: is.counts || {unknown:0,unsure:0,confident:0},
+      });
+      existingIds.add(is.id);
+    });
+  }
+  saveState();
+  el('#importOverlay').classList.remove('active');
+  showToast(`${added}장 가져옴${skipped? ' · '+skipped+'장 중복 건너뜀':''}`);
+  goHome();
+});
+
+/* ======================= 프로필 (이름 설정) ======================= */
+function openProfileModal(isFirst){
+  el('#profileNameInput').value = profile.username || '';
+  if(isFirst){
+    el('#profileModalTitle').textContent = '환영합니다! 🎉';
+    el('#profileModalDesc').innerHTML =
+      'CN Learner는 간체·번체·병음을 성조별 색상으로 보여주는 개인용 중국어 단어 학습 앱이에요. ' +
+      '그룹으로 단어를 관리하고, 라이트너 방식으로 복습할 수 있습니다.<br><br>' +
+      '<strong>시작하기 전에 상단의 "사용법" 버튼에서 사용 방법을 꼭 확인해주세요!</strong><br><br>' +
+      '이름을 알려주시면 반갑게 인사해드릴게요 (선택사항, 나중에 언제든 바꿀 수 있어요).';
+    el('#profileCancelBtn').textContent = '건너뛰기';
+    el('#profileSaveBtn').textContent = '시작하기';
+  } else {
+    el('#profileModalTitle').textContent = '이름 설정';
+    el('#profileModalDesc').textContent = '단어장에서 사용할 이름입니다 (선택사항).';
+    el('#profileCancelBtn').textContent = '취소';
+    el('#profileSaveBtn').textContent = '저장';
+  }
+  el('#profileOverlay').dataset.first = isFirst ? '1' : '0';
+  el('#profileOverlay').classList.add('active');
+}
+el('#profileBtn').addEventListener('click', ()=>openProfileModal(false));
+el('#profileCancelBtn').addEventListener('click', ()=>{
+  const isFirst = el('#profileOverlay').dataset.first === '1';
+  el('#profileOverlay').classList.remove('active');
+  if(isFirst){
+    profile.username = '';
+    profile._firstLaunch = false;
+    saveProfile();
+    showWelcomeToast();
+    render();
+  }
+});
+el('#profileSaveBtn').addEventListener('click', ()=>{
+  const isFirst = el('#profileOverlay').dataset.first === '1';
+  profile.username = el('#profileNameInput').value.trim();
+  profile._firstLaunch = false;
+  saveProfile();
+  el('#profileOverlay').classList.remove('active');
+  if(isFirst){
+    showWelcomeToast();
+  } else {
+    showToast('이름이 저장되었습니다');
+  }
+  render();
+});
+
+/* ======================= 도움말 ======================= */
+el('#geminiPromptBlock').textContent = GEMINI_PROMPT;
+el('#helpBtn').addEventListener('click', ()=>el('#helpOverlay').classList.add('active'));
+el('#fileNoticeLink').addEventListener('click', ()=>{
+  switchHelpTab(1);
+  el('#helpOverlay').classList.add('active');
+  setTimeout(()=>{
+    const target = el('#installGuideSection');
+    if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 50);
+});
+el('#helpCloseBtn').addEventListener('click', ()=>el('#helpOverlay').classList.remove('active'));
+function switchHelpTab(tab){
+  el('#helpTab1').classList.toggle('active', tab===1);
+  el('#helpTab2').classList.toggle('active', tab===2);
+  el('#helpPanel1').classList.toggle('active', tab===1);
+  el('#helpPanel2').classList.toggle('active', tab===2);
+}
+el('#helpTab1').addEventListener('click', ()=>switchHelpTab(1));
+el('#helpTab2').addEventListener('click', ()=>switchHelpTab(2));
+el('#copyPromptBtn').addEventListener('click', async ()=>{
+  try{
+    await navigator.clipboard.writeText(GEMINI_PROMPT);
+    showToast('프롬프트가 복사되었습니다');
+  }catch(e){
+    // 클립보드 API 사용 불가 시 대체: 텍스트 선택
+    const range = document.createRange();
+    range.selectNodeContents(el('#geminiPromptBlock'));
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    showToast('복사 권한이 없어 텍스트를 선택했습니다. Ctrl/Cmd+C로 복사해주세요');
+  }
+});
+
+/* ======================= 세션 타임아웃 주기 체크 ======================= */
+setInterval(()=>{
+  const finalized = checkSessionTimeout();
+  if(finalized && nav.view === 'history') render();
+}, 60 * 1000);
+
+
+/* ======================= PWA: 홈 화면 추가 / 오프라인 지원 ======================= */
+if('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{
+      /* 등록 실패 시 무시 (예: sw.js가 없는 환경, file:// 등) */
+    });
+  });
+}
+
+/* ======================= 초기 렌더 ======================= */
+checkSessionTimeout();
+render();
+if(profile._firstLaunch){
+  openProfileModal(true);
+} else {
+  showWelcomeToast();
+}
+</script>
+</body>
+</html>
