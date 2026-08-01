@@ -71,7 +71,7 @@
   .empty{padding:40px 24px; text-align:center; color:var(--muted); font-size:13px; line-height:1.7;}
 
   .group-list{padding:4px 14px 8px; display:flex; flex-direction:column; gap:10px;}
-  .group{border:1px solid var(--line); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:8px; cursor:pointer;}
+  .group{border:1px solid var(--line); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:6px; cursor:pointer;}
   .group-top{display:flex; justify-content:space-between; align-items:flex-start; gap:8px;}
   .group-name-wrap{display:flex; align-items:center; gap:6px; min-width:0;}
   .group-name{font-size:15px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
@@ -83,7 +83,9 @@
   .group-count{font-size:11px; color:var(--muted); white-space:nowrap; flex-shrink:0;}
   .progress-bar{height:8px; border-radius:5px; background:#eee; overflow:hidden; display:flex;}
   .progress-bar span{height:100%;}
-  .group-bottom{display:flex; justify-content:space-between; align-items:center;}
+  .group-bottom{display:flex; justify-content:flex-end; align-items:center;}
+  .section-title-row{display:flex; justify-content:space-between; align-items:center; padding:18px 18px 6px;}
+  .section-title-row .box-legend.shared-legend{font-size:10px;}
   .group-order-btns{display:flex; gap:2px;}
   .box-legend{display:flex; gap:6px; font-size:9px; color:var(--muted); flex-wrap:wrap;}
   .box-legend i{width:8px; height:8px; border-radius:2px; display:inline-block; margin-right:3px; vertical-align:-1px;}
@@ -93,6 +95,8 @@
   /* ---- Group Detail ---- */
   .mode-row{display:flex; gap:8px; padding:14px 18px 6px;}
   .group-desc-block{padding:0 18px 10px; font-size:12.5px; color:var(--muted); line-height:1.5;}
+  .group-desc-clamp{white-space:pre-wrap; word-break:break-word; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;}
+  .desc-more-btn{font-size:11.5px; color:var(--accent); font-weight:700; cursor:pointer; margin-top:3px; display:inline-block;}
   .card-row{display:flex; align-items:center; justify-content:space-between; padding:12px 18px;
     border-bottom:1px solid var(--line); gap:10px;}
   .card-row .hz{font-size:16px; font-weight:700;}
@@ -147,6 +151,9 @@
     font-family:inherit; background:var(--paper); color:var(--ink);
   }
   .field textarea{min-height:70px; resize:vertical;}
+  .checkbox-row{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
+  .checkbox-row input[type="checkbox"]{width:18px; height:18px; flex-shrink:0; accent-color:var(--accent);}
+  .checkbox-row label{margin:0; font-size:13px; font-weight:500; color:var(--ink);}
   .field textarea.mono{min-height:120px; font-family: 'SFMono-Regular', Menlo, monospace; font-size:12.5px;}
   .modal-actions{display:flex; gap:8px; margin-top:16px;}
   .preview-list{border:1px solid var(--line); border-radius:8px; max-height:200px; overflow-y:auto; margin-top:10px;}
@@ -229,7 +236,15 @@
         <div class="btn flex" id="openImportBtn">가져오기</div>
         <div class="btn flex" id="exportBtn">내보내기</div>
       </div>
-      <div class="section-title">그룹</div>
+      <div class="section-title-row">
+        <div class="section-title" style="padding:0;">그룹</div>
+        <div class="box-legend shared-legend">
+          <span><i style="background:var(--box1);"></i>Box1</span>
+          <span><i style="background:var(--box2);"></i>Box2</span>
+          <span><i style="background:var(--box3);"></i>Box3</span>
+          <span><i style="background:var(--box4);"></i>Box4</span>
+        </div>
+      </div>
       <div class="group-list" id="groupList"></div>
     </div>
 
@@ -335,6 +350,29 @@
   </div>
 </div>
 
+<!-- Backup prompt modal -->
+<div class="overlay" id="backupPromptOverlay">
+  <div class="modal">
+    <h2 id="backupPromptTitle">백업하시겠어요?</h2>
+    <div class="preview-summary" id="backupPromptDesc" style="margin-top:0;"></div>
+    <div class="modal-actions">
+      <div class="btn flex" id="backupPromptLaterBtn">나중에</div>
+      <div class="btn primary flex" id="backupPromptExportBtn">지금 백업</div>
+    </div>
+  </div>
+</div>
+
+<!-- Group description popup (전체 보기) -->
+<div class="overlay" id="descPopupOverlay">
+  <div class="modal">
+    <h2 id="descPopupTitle">그룹 설명</h2>
+    <div id="descPopupBody" style="white-space:pre-wrap; word-break:break-word; font-size:13.5px; color:var(--ink); line-height:1.6; max-height:55vh; overflow-y:auto;"></div>
+    <div class="modal-actions">
+      <div class="btn primary flex" id="descPopupCloseBtn">닫기</div>
+    </div>
+  </div>
+</div>
+
 <!-- Move cards modal -->
 <div class="overlay" id="moveOverlay">
   <div class="modal">
@@ -370,6 +408,10 @@
         <div class="btn sm" id="importSelectNoneBtn">전체 해제</div>
       </div>
       <div class="checklist" id="importGroupList"></div>
+      <div class="checkbox-row" style="margin-top:10px;">
+        <input type="checkbox" id="importIncludeSessions" checked>
+        <label for="importIncludeSessions">학습기록(세션)도 함께 가져오기</label>
+      </div>
     </div>
     <div class="modal-actions">
       <div class="btn flex" id="importCancelBtn">취소</div>
@@ -412,6 +454,17 @@
         <option value="20">20장</option>
         <option value="all">전체</option>
       </select>
+    </div>
+    <div class="field">
+      <label style="margin-bottom:8px;">백업 알림</label>
+      <div class="checkbox-row">
+        <input type="checkbox" id="profileBackupOnAdd">
+        <label for="profileBackupOnAdd">카드를 추가할 때마다 백업 여부 묻기</label>
+      </div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="profileBackupPeriodic">
+        <label for="profileBackupPeriodic">3일마다 백업 여부 묻기</label>
+      </div>
     </div>
     <div class="modal-actions">
       <div class="btn flex" id="profileCancelBtn">취소</div>
@@ -518,7 +571,7 @@
 
 <script>
 /* ======================= 상수 ======================= */
-const APP_VERSION = '1.12.0';
+const APP_VERSION = '1.13.0';
 const STORAGE_KEY = 'flashcard_app_v1';
 const PROFILE_KEY = 'cn_learner_profile';
 const SESSION_TIMEOUT_MS = 5 * 60 * 1000; // 5분 무활동 시 세션 종료
@@ -596,19 +649,28 @@ function saveState(){
 function loadProfile(){
   try{
     const raw = localStorage.getItem(PROFILE_KEY);
-    if(raw === null) return {username:'', leitnerBatchSize:15, _firstLaunch:true};
+    if(raw === null) return {username:'', leitnerBatchSize:15, backupOnAdd:true, backupPeriodic:true, lastBackupPromptAt:null, _firstLaunch:true};
     const p = JSON.parse(raw);
     return {
       username: p.username || '',
       leitnerBatchSize: (p.leitnerBatchSize === 'all' || typeof p.leitnerBatchSize === 'number') ? p.leitnerBatchSize : 15,
+      backupOnAdd: p.backupOnAdd !== false,
+      backupPeriodic: p.backupPeriodic !== false,
+      lastBackupPromptAt: p.lastBackupPromptAt || null,
       _firstLaunch:false,
     };
   }catch(e){
-    return {username:'', leitnerBatchSize:15, _firstLaunch:true};
+    return {username:'', leitnerBatchSize:15, backupOnAdd:true, backupPeriodic:true, lastBackupPromptAt:null, _firstLaunch:true};
   }
 }
 function saveProfile(){
-  localStorage.setItem(PROFILE_KEY, JSON.stringify({username: profile.username, leitnerBatchSize: profile.leitnerBatchSize}));
+  localStorage.setItem(PROFILE_KEY, JSON.stringify({
+    username: profile.username,
+    leitnerBatchSize: profile.leitnerBatchSize,
+    backupOnAdd: profile.backupOnAdd,
+    backupPeriodic: profile.backupPeriodic,
+    lastBackupPromptAt: profile.lastBackupPromptAt,
+  }));
 }
 function uuid(){
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c=>{
@@ -852,12 +914,6 @@ function renderHome(){
           <span style="width:${pct(s.box4)}%; background:var(--box4);"></span>
         </div>
         <div class="group-bottom">
-          <div class="box-legend">
-            <span><i style="background:var(--box1);"></i>Box1</span>
-            <span><i style="background:var(--box2);"></i>Box2</span>
-            <span><i style="background:var(--box3);"></i>Box3</span>
-            <span><i style="background:var(--box4);"></i>Box4</span>
-          </div>
           <div class="study-btn ${s.due===0?'disabled':''}">${s.due===0 ? (s.total>0 ? '오늘 완료 ✓' : '카드 없음') : '학습하기'}</div>
         </div>
       </div>`;
@@ -898,7 +954,15 @@ function renderGroup(){
   const descBlock = el('#groupDescBlock');
   if(g.description){
     descBlock.style.display = 'block';
-    descBlock.textContent = g.description;
+    descBlock.innerHTML = `<div class="group-desc-clamp" id="groupDescClamp">${escapeHtml(g.description)}</div><div class="desc-more-btn" id="descMoreBtn" style="display:none;">...(더보기)</div>`;
+    requestAnimationFrame(()=>{
+      const clampEl = el('#groupDescClamp');
+      const moreBtn = el('#descMoreBtn');
+      if(clampEl && moreBtn && clampEl.scrollHeight > clampEl.clientHeight + 2){
+        moreBtn.style.display = 'inline-block';
+        moreBtn.addEventListener('click', ()=> openDescPopup(g.name, g.description));
+      }
+    });
   } else {
     descBlock.style.display = 'none';
   }
@@ -1190,6 +1254,13 @@ function cardDuplicateKey(c){
 }
 
 /* ======================= 그룹 편집 모달 (이름/설명) ======================= */
+function openDescPopup(title, text){
+  el('#descPopupTitle').textContent = title;
+  el('#descPopupBody').textContent = text;
+  el('#descPopupOverlay').classList.add('active');
+}
+el('#descPopupCloseBtn').addEventListener('click', ()=>el('#descPopupOverlay').classList.remove('active'));
+
 function openGroupEditModal(groupId){
   const g = state.groups.find(g=>g.id===groupId);
   if(!g) return;
@@ -1304,6 +1375,9 @@ el('#pasteConfirmBtn').addEventListener('click', ()=>{
   showToast(`${added}장 추가됨${skipped? ' · '+skipped+'장 중복 건너뜀':''}`);
   nav = {view:'group', groupId};
   render();
+  if(added > 0 && profile.backupOnAdd){
+    showBackupPrompt('add');
+  }
 });
 
 /* ======================= 카드 편집 모달 ======================= */
@@ -1459,10 +1533,40 @@ el('#exportSelectAllBtn').addEventListener('click', ()=>{
 el('#exportSelectNoneBtn').addEventListener('click', ()=>{
   els('.export-gcb').forEach(cb=>cb.checked = false);
 });
-el('#exportConfirmBtn').addEventListener('click', ()=>{
-  const selectedIds = new Set(Array.from(els('.export-gcb')).filter(cb=>cb.checked).map(cb=>cb.dataset.gid));
-  if(selectedIds.size === 0){ showToast('내보낼 그룹을 1개 이상 선택해주세요'); return; }
+function showBackupPrompt(reason){
+  if(el('#profileOverlay').classList.contains('active')) return; // 다른 모달과 겹치지 않도록
+  if(reason === 'add'){
+    el('#backupPromptTitle').textContent = '카드가 추가되었어요';
+    el('#backupPromptDesc').textContent = '지금 내보내기(백업)를 해두면 데이터를 안전하게 보관할 수 있어요.';
+  } else {
+    el('#backupPromptTitle').textContent = '학습기록을 백업해두세요';
+    el('#backupPromptDesc').textContent = '최근 며칠간 학습이 쌓였어요. 지금 백업해두면 안전합니다.';
+  }
+  el('#backupPromptOverlay').dataset.reason = reason;
+  el('#backupPromptOverlay').classList.add('active');
+}
+el('#backupPromptLaterBtn').addEventListener('click', ()=>{
+  el('#backupPromptOverlay').classList.remove('active');
+});
+el('#backupPromptExportBtn').addEventListener('click', ()=>{
+  const count = performExport(state.groups.map(g=>g.id));
+  el('#backupPromptOverlay').classList.remove('active');
+  showToast(`${count}개 그룹 백업 완료`);
+});
+function checkPeriodicBackupPrompt(){
+  if(!profile.backupPeriodic) return;
+  if(state.groups.length === 0) return;
+  const THREE_DAYS = 3 * 24 * 60 * 60 * 1000;
+  const last = profile.lastBackupPromptAt ? new Date(profile.lastBackupPromptAt).getTime() : 0;
+  if(Date.now() - last >= THREE_DAYS){
+    profile.lastBackupPromptAt = nowISO();
+    saveProfile();
+    showBackupPrompt('periodic');
+  }
+}
 
+function performExport(groupIds){
+  const selectedIds = new Set(groupIds);
   const groups = state.groups.filter(g=>selectedIds.has(g.id));
   const cards = state.cards.filter(c=>selectedIds.has(c.groupId));
   const sessions = state.sessions.filter(s=>selectedIds.has(s.groupId));
@@ -1481,8 +1585,15 @@ el('#exportConfirmBtn').addEventListener('click', ()=>{
   a.download = `CN_Learner_data_v${APP_VERSION}_${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
+  return groups.length;
+}
+
+el('#exportConfirmBtn').addEventListener('click', ()=>{
+  const selectedIds = Array.from(els('.export-gcb')).filter(cb=>cb.checked).map(cb=>cb.dataset.gid);
+  if(selectedIds.length === 0){ showToast('내보낼 그룹을 1개 이상 선택해주세요'); return; }
+  const count = performExport(selectedIds);
   el('#exportOverlay').classList.remove('active');
-  showToast(`${groups.length}개 그룹 내보내기 완료`);
+  showToast(`${count}개 그룹 내보내기 완료`);
 });
 
 el('#openImportBtn').addEventListener('click', ()=>{
@@ -1544,7 +1655,10 @@ el('#importConfirmBtn').addEventListener('click', ()=>{
 
   const importGroups = pendingImport.groups.filter(g=>selectedIds.has(g.id));
   const importCards = pendingImport.cards.filter(c=>selectedIds.has(c.groupId));
-  const importSessions = Array.isArray(pendingImport.sessions) ? pendingImport.sessions.filter(s=>selectedIds.has(s.groupId)) : [];
+  const includeSessions = el('#importIncludeSessions').checked;
+  const importSessions = (includeSessions && Array.isArray(pendingImport.sessions))
+    ? pendingImport.sessions.filter(s=>selectedIds.has(s.groupId))
+    : [];
 
   const groupIdMap = {}; // 원본 groupId -> 로컬 groupId
   importGroups.forEach(ig=>{
@@ -1607,6 +1721,8 @@ el('#importConfirmBtn').addEventListener('click', ()=>{
 function openProfileModal(isFirst){
   el('#profileNameInput').value = profile.username || '';
   el('#profileBatchSize').value = (profile.leitnerBatchSize === 'all') ? 'all' : String(profile.leitnerBatchSize || 15);
+  el('#profileBackupOnAdd').checked = profile.backupOnAdd !== false;
+  el('#profileBackupPeriodic').checked = profile.backupPeriodic !== false;
   if(isFirst){
     el('#profileModalTitle').textContent = '환영합니다! 🎉';
     el('#profileModalDesc').innerHTML =
@@ -1618,7 +1734,7 @@ function openProfileModal(isFirst){
     el('#profileSaveBtn').textContent = '시작하기';
   } else {
     el('#profileModalTitle').textContent = 'MY 설정';
-    el('#profileModalDesc').textContent = '이름과 라이트너 학습 단위를 설정합니다 (모두 선택사항).';
+    el('#profileModalDesc').textContent = '이름, 라이트너 학습 단위, 백업 알림을 설정합니다.';
     el('#profileCancelBtn').textContent = '취소';
     el('#profileSaveBtn').textContent = '저장';
   }
@@ -1632,6 +1748,8 @@ el('#profileCancelBtn').addEventListener('click', ()=>{
   if(isFirst){
     profile.username = '';
     profile.leitnerBatchSize = 15;
+    profile.backupOnAdd = true;
+    profile.backupPeriodic = true;
     profile._firstLaunch = false;
     saveProfile();
     showWelcomeToast();
@@ -1643,6 +1761,8 @@ el('#profileSaveBtn').addEventListener('click', ()=>{
   profile.username = el('#profileNameInput').value.trim();
   const bs = el('#profileBatchSize').value;
   profile.leitnerBatchSize = (bs === 'all') ? 'all' : parseInt(bs, 10);
+  profile.backupOnAdd = el('#profileBackupOnAdd').checked;
+  profile.backupPeriodic = el('#profileBackupPeriodic').checked;
   profile._firstLaunch = false;
   saveProfile();
   el('#profileOverlay').classList.remove('active');
@@ -1712,6 +1832,7 @@ if(profile._firstLaunch){
   openProfileModal(true);
 } else {
   showWelcomeToast();
+  checkPeriodicBackupPrompt();
 }
 </script>
 </body>
