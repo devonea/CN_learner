@@ -21,7 +21,7 @@
     --tone3-bg:#2a9d5c; --tone3-fg:#111;
     --tone4-bg:#4aa8d8; --tone4-fg:#111;
     --tone0-bg:#3a3a3a; --tone0-fg:#fff;
-    --box1:#c7c7c0; --box2:#8fbf8a; --box3:#2f8f4e;
+    --box1:#c7c7c0; --box2:#f4a300; --box3:#4aa8d8; --box4:#2f8f4e;
   }
   *{box-sizing:border-box;}
   html,body{margin:0; padding:0; background:var(--paper); color:var(--ink);
@@ -85,7 +85,7 @@
   .progress-bar span{height:100%;}
   .group-bottom{display:flex; justify-content:space-between; align-items:center;}
   .group-order-btns{display:flex; gap:2px;}
-  .box-legend{display:flex; gap:8px; font-size:10px; color:var(--muted);}
+  .box-legend{display:flex; gap:6px; font-size:9px; color:var(--muted); flex-wrap:wrap;}
   .box-legend i{width:8px; height:8px; border-radius:2px; display:inline-block; margin-right:3px; vertical-align:-1px;}
   .study-btn{font-size:12px; font-weight:600; padding:6px 12px; border-radius:8px; background:var(--accent-soft); color:var(--accent);}
   .study-btn.disabled{background:#eee; color:var(--muted);}
@@ -404,6 +404,15 @@
       <label>이름 (선택사항)</label>
       <input type="text" id="profileNameInput" placeholder="예: 제인">
     </div>
+    <div class="field">
+      <label>라이트너 학습 단위 (한 번에 학습할 카드 수)</label>
+      <select id="profileBatchSize">
+        <option value="10">10장</option>
+        <option value="15">15장</option>
+        <option value="20">20장</option>
+        <option value="all">전체</option>
+      </select>
+    </div>
     <div class="modal-actions">
       <div class="btn flex" id="profileCancelBtn">취소</div>
       <div class="btn primary flex" id="profileSaveBtn">저장</div>
@@ -428,10 +437,19 @@
         <li>그룹 카드의 ✎ 아이콘으로 그룹 이름·설명을 수정하고, ↑↓ 아이콘으로 순서를 바꿀 수 있습니다.</li>
         <li>그룹 상세 화면에서 "카드 선택"으로 여러 카드를 한 번에 삭제하거나 다른 그룹으로 이동할 수 있습니다.</li>
       </ul>
+      <h3>라이트너 학습 원리 (Box1~4)</h3>
+      <p>카드마다 숙련도에 따라 Box1~Box4 중 하나에 속하며, 박스가 높을수록 복습 간격이 길어집니다 (분산복습 원리 — 잘 아는 내용일수록 뜸하게, 잘 모르는 내용일수록 자주 복습).</p>
+      <ul>
+        <li><strong>Box1 (당일)</strong>: 새 카드가 시작하는 박스. "모름"으로 채점되면 항상 Box1로 돌아가고, 다음 복습 예정일이 즉시(당일)로 잡혀 같은 날 계속 다시 등장합니다.</li>
+        <li><strong>Box2 (3일 뒤)</strong>, <strong>Box3 (7일 뒤)</strong>, <strong>Box4 (14일 뒤)</strong>: "자신있음"으로 채점할 때마다 한 단계씩 올라가며, 그만큼 다음 복습일이 뒤로 늘어납니다.</li>
+        <li>"알듯말듯"은 현재 박스를 유지합니다 (승급도 강등도 아님).</li>
+        <li>오늘 복습 예정(Due)인 카드가 하나도 없으면 라이트너 모드는 시작되지 않고 안내 메시지가 표시됩니다. 그래도 더 학습하고 싶다면 랜덤 모드를 이용하거나 새 그룹을 만들어보세요.</li>
+      </ul>
       <h3>학습 모드</h3>
       <ul>
-        <li><strong>라이트너 모드</strong>: 오늘 복습할 카드를 우선 노출합니다 (1일→3일→7일 주기). 오늘 분량을 다 마쳐도 전체 카드로 추가 학습이 가능합니다.</li>
-        <li><strong>랜덤 모드</strong>: 그룹 내 모든 카드를 무작위 순서로 학습합니다.</li>
+        <li><strong>라이트너 모드</strong>: 오늘 복습할 카드(Due)만, 박스가 낮은 카드부터 우선 노출합니다.</li>
+        <li>한 번에 학습할 카드 수는 <strong>MY 설정</strong>에서 조절할 수 있습니다 (10장 / 15장 / 20장 / 전체, 기본값 15장). Due 카드가 설정한 수보다 많으면 그중 우선순위 높은 카드만 그 세션에서 학습합니다.</li>
+        <li><strong>랜덤 모드</strong>: 그룹 내 모든 카드를 무작위 순서로, Due 여부와 상관없이 학습합니다.</li>
         <li>카드를 탭하면 뒤집혀서 병음·번체·뜻이 나타나며, <strong>모름 / 알듯말듯 / 자신있음</strong> 3단계로 채점합니다.</li>
       </ul>
       <h3 id="installGuideSection">홈 화면에 설치하기 (오프라인 지원 포함)</h3>
@@ -500,7 +518,7 @@
 
 <script>
 /* ======================= 상수 ======================= */
-const APP_VERSION = '1.10.0';
+const APP_VERSION = '1.12.0';
 const STORAGE_KEY = 'flashcard_app_v1';
 const PROFILE_KEY = 'cn_learner_profile';
 const SESSION_TIMEOUT_MS = 5 * 60 * 1000; // 5분 무활동 시 세션 종료
@@ -518,7 +536,7 @@ const TONE_COLORS = {
   4:{bg:'var(--tone4-bg)', fg:'var(--tone4-fg)'},
   0:{bg:'var(--tone0-bg)', fg:'var(--tone0-fg)'},
 };
-const LEITNER_INTERVALS = {1:1, 2:3, 3:7}; // days
+const LEITNER_INTERVALS = {1:0, 2:3, 3:7, 4:14}; // days (당일 → 3일 → 7일 → 14일, 점증 간격의 분산복습)
 const GRADE_LABEL = {unknown:'모름', unsure:'알듯말듯', confident:'자신있음'};
 const GRADE_COLOR = {unknown:'#b5473f', unsure:'#d6a324', confident:'#2f8f4e'};
 
@@ -578,15 +596,19 @@ function saveState(){
 function loadProfile(){
   try{
     const raw = localStorage.getItem(PROFILE_KEY);
-    if(raw === null) return {username:'', _firstLaunch:true};
+    if(raw === null) return {username:'', leitnerBatchSize:15, _firstLaunch:true};
     const p = JSON.parse(raw);
-    return {username: p.username || '', _firstLaunch:false};
+    return {
+      username: p.username || '',
+      leitnerBatchSize: (p.leitnerBatchSize === 'all' || typeof p.leitnerBatchSize === 'number') ? p.leitnerBatchSize : 15,
+      _firstLaunch:false,
+    };
   }catch(e){
-    return {username:'', _firstLaunch:true};
+    return {username:'', leitnerBatchSize:15, _firstLaunch:true};
   }
 }
 function saveProfile(){
-  localStorage.setItem(PROFILE_KEY, JSON.stringify({username: profile.username}));
+  localStorage.setItem(PROFILE_KEY, JSON.stringify({username: profile.username, leitnerBatchSize: profile.leitnerBatchSize}));
 }
 function uuid(){
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c=>{
@@ -659,8 +681,9 @@ function groupStats(groupId){
   const box1 = cards.filter(c=>c.box===1).length;
   const box2 = cards.filter(c=>c.box===2).length;
   const box3 = cards.filter(c=>c.box===3).length;
+  const box4 = cards.filter(c=>c.box===4).length;
   const due = cards.filter(isDue).length;
-  return {total, box1, box2, box3, due};
+  return {total, box1, box2, box3, box4, due};
 }
 
 function renderHanziColored(chars, tones, sizeClass){
@@ -712,12 +735,11 @@ function goStudy(groupId, mode){
     return;
   }
   let queue;
-  let usedFallback = false;
   if(mode === 'leitner'){
-    let pool = cards.filter(isDue);
+    const pool = cards.filter(isDue);
     if(pool.length === 0){
-      pool = cards.slice();
-      usedFallback = true;
+      showToast('오늘 복습할 카드가 없습니다. 새로운 그룹을 만들어 학습을 이어가보세요! 🌱', 2600);
+      return;
     }
     queue = pool.sort((a,b)=>{
       const boxA = a.box || 1, boxB = b.box || 1;
@@ -726,12 +748,14 @@ function goStudy(groupId, mode){
       const bv = b.nextReview ? new Date(b.nextReview).getTime() : 0;
       return av - bv;
     }).map(c=>c.id);
+    if(profile.leitnerBatchSize !== 'all'){
+      queue = queue.slice(0, profile.leitnerBatchSize || 15);
+    }
   } else {
     queue = shuffle(cards.map(c=>c.id));
   }
   studySession = {groupId, mode, queue, idx:0, flipped:false};
   nav = {view:'study', groupId};
-  if(usedFallback) showToast('오늘 예정된 복습은 끝났지만, 전체 카드로 추가 학습을 시작합니다');
   render();
 }
 function shuffle(arr){
@@ -783,11 +807,14 @@ function render(){
 function renderHome(){
   const total = state.cards.length;
   const due = state.cards.filter(isDue).length;
-  const mastery = total ? Math.round(state.cards.filter(c=>c.box===3).length / total * 100) : 0;
+  const mastery = total ? Math.round(state.cards.filter(c=>c.box===4).length / total * 100) : 0;
+  const uniqueChars = new Set();
+  state.cards.forEach(c => { for(const ch of c.simplified){ uniqueChars.add(ch); } });
   el('#statDue').textContent = due;
   el('#statTotal').textContent = total;
   el('#statMastery').textContent = mastery + '%';
-  el('#homeMeta').textContent = `${state.groups.length}개 그룹 · 총 ${total}장`;
+  const batchLabel = (profile.leitnerBatchSize === 'all') ? '전체' : `${profile.leitnerBatchSize || 15}장`;
+  el('#homeMeta').textContent = `${state.groups.length}개 그룹 · 총 ${total}장 · 고유 한자 ${uniqueChars.size}자 · 라이트너 단위 ${batchLabel}`;
   el('#fileNotice').style.display = (location.protocol === 'file:') ? 'flex' : 'none';
   el('#appFooter').textContent = `CN Learner v${APP_VERSION}`;
 
@@ -822,14 +849,16 @@ function renderHome(){
           <span style="width:${pct(s.box1)}%; background:var(--box1);"></span>
           <span style="width:${pct(s.box2)}%; background:var(--box2);"></span>
           <span style="width:${pct(s.box3)}%; background:var(--box3);"></span>
+          <span style="width:${pct(s.box4)}%; background:var(--box4);"></span>
         </div>
         <div class="group-bottom">
           <div class="box-legend">
             <span><i style="background:var(--box1);"></i>Box1</span>
             <span><i style="background:var(--box2);"></i>Box2</span>
             <span><i style="background:var(--box3);"></i>Box3</span>
+            <span><i style="background:var(--box4);"></i>Box4</span>
           </div>
-          <div class="study-btn ${s.due===0?'disabled':''}">${s.due===0 ? (s.total>0 ? '오늘 완료 · 추가 학습' : '카드 없음') : '학습하기'}</div>
+          <div class="study-btn ${s.due===0?'disabled':''}">${s.due===0 ? (s.total>0 ? '오늘 완료 ✓' : '카드 없음') : '학습하기'}</div>
         </div>
       </div>`;
   }).join('');
@@ -882,7 +911,7 @@ function renderGroup(){
     updateSelectionBar();
     return;
   }
-  const boxColor = {1:'var(--box1)',2:'var(--box2)',3:'var(--box3)'};
+  const boxColor = {1:'var(--box1)',2:'var(--box2)',3:'var(--box3)',4:'var(--box4)'};
   rows.innerHTML = cards.map(c=>`
     <div class="card-row" data-cid="${c.id}">
       <div class="hz-wrap">
@@ -1016,7 +1045,7 @@ function gradeCard(cardId, grade){
   let box = card.box || 1;
   if(grade === 'unknown') box = 1;
   else if(grade === 'unsure') box = box; // 유지
-  else if(grade === 'confident') box = Math.min(box+1, 3);
+  else if(grade === 'confident') box = Math.min(box+1, 4);
   card.box = box;
   card.lastReviewed = nowISO();
   card.nextReview = addDays(nowISO(), LEITNER_INTERVALS[box]);
@@ -1577,6 +1606,7 @@ el('#importConfirmBtn').addEventListener('click', ()=>{
 /* ======================= 프로필 (이름 설정) ======================= */
 function openProfileModal(isFirst){
   el('#profileNameInput').value = profile.username || '';
+  el('#profileBatchSize').value = (profile.leitnerBatchSize === 'all') ? 'all' : String(profile.leitnerBatchSize || 15);
   if(isFirst){
     el('#profileModalTitle').textContent = '환영합니다! 🎉';
     el('#profileModalDesc').innerHTML =
@@ -1587,8 +1617,8 @@ function openProfileModal(isFirst){
     el('#profileCancelBtn').textContent = '건너뛰기';
     el('#profileSaveBtn').textContent = '시작하기';
   } else {
-    el('#profileModalTitle').textContent = '이름 설정';
-    el('#profileModalDesc').textContent = '단어장에서 사용할 이름입니다 (선택사항).';
+    el('#profileModalTitle').textContent = 'MY 설정';
+    el('#profileModalDesc').textContent = '이름과 라이트너 학습 단위를 설정합니다 (모두 선택사항).';
     el('#profileCancelBtn').textContent = '취소';
     el('#profileSaveBtn').textContent = '저장';
   }
@@ -1601,6 +1631,7 @@ el('#profileCancelBtn').addEventListener('click', ()=>{
   el('#profileOverlay').classList.remove('active');
   if(isFirst){
     profile.username = '';
+    profile.leitnerBatchSize = 15;
     profile._firstLaunch = false;
     saveProfile();
     showWelcomeToast();
@@ -1610,13 +1641,15 @@ el('#profileCancelBtn').addEventListener('click', ()=>{
 el('#profileSaveBtn').addEventListener('click', ()=>{
   const isFirst = el('#profileOverlay').dataset.first === '1';
   profile.username = el('#profileNameInput').value.trim();
+  const bs = el('#profileBatchSize').value;
+  profile.leitnerBatchSize = (bs === 'all') ? 'all' : parseInt(bs, 10);
   profile._firstLaunch = false;
   saveProfile();
   el('#profileOverlay').classList.remove('active');
   if(isFirst){
     showWelcomeToast();
   } else {
-    showToast('이름이 저장되었습니다');
+    showToast('설정이 저장되었습니다');
   }
   render();
 });
