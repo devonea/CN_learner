@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cn-learner-cache-v1';
+const CACHE_NAME = 'cn-learner-cache-v2';
 const APP_SHELL = [
   './',
   './index.html',
@@ -25,17 +25,26 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// 네트워크 우선, 실패(오프라인) 시 캐시로 대체 + 성공 시 캐시 갱신
+// 캐시 우선(즉시 응답, 데이터 소모 없음) + 온라인이면 백그라운드로 최신화
+// 오프라인/비행기모드에서도 캐시가 있으면 네트워크 시도 자체를 하지 않아 즉시 실행됨
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        return response;
-      })
-      .catch(() => caches.match(event.request).then((cached) => cached || caches.match('./index.html')))
+    caches.match(event.request).then((cached) => {
+      const networkUpdate = fetch(event.request)
+        .then((response) => {
+          if (response && response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => cached); // 네트워크 실패 시 캐시로 대체 (캐시도 없으면 undefined)
+
+      // 캐시가 있으면 즉시 반환(오프라인/저속 네트워크에서도 대기 없음)
+      // 캐시가 없으면(최초 방문) 네트워크 응답을 기다림
+      return cached || networkUpdate;
+    })
   );
 });
